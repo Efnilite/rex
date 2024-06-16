@@ -1,4 +1,5 @@
-import dev.efnilite.rex.*
+import dev.efnilite.rex.token.*
+import dev.efnilite.rex.token.Tokenizer.Companion.tokenize
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import kotlin.reflect.KClass
@@ -7,7 +8,7 @@ import kotlin.test.assertFails
 
 object TokenizerTest {
 
-    private fun assertLiteral(expected: Any, type: KClass<out Literal<*>>, singular: Any) {
+    private fun assertLiteral(expected: Any?, type: KClass<out Literal<*>>, singular: Any) {
         assert(singular::class == type) { "Expected ${type.simpleName}, got ${singular::class.simpleName}" }
         assertEquals(expected, (singular as Literal<*>).value)
     }
@@ -31,12 +32,12 @@ object TokenizerTest {
         tokenize("[      \t\r true        \n2   ]").let {
             assertEquals(1, it.size)
 
-            assert(it[0] is Arr)
-            val arr = it[0] as Arr
-            assertEquals(2, arr.tokens.size)
+            assert(it[0] is ArrToken)
+            val arrToken = it[0] as ArrToken
+            assertEquals(2, arrToken.tokens.size)
 
-            assertLiteral(true, BooleanLiteral::class, arr.tokens[0])
-            assertLiteral(2, IntLiteral::class, arr.tokens[1])
+            assertLiteral(true, BooleanLiteral::class, arrToken.tokens[0])
+            assertLiteral(2, IntLiteral::class, arrToken.tokens[1])
         }
     }
 
@@ -91,14 +92,14 @@ object TokenizerTest {
 
         tokenize("['hello' {'xx' 'there'}]").let {
             assertEquals(1, it.size)
-            assert(it[0] is Arr)
-            val arr = it[0] as Arr
-            assertEquals(2, arr.tokens.size)
-            assertLiteral("hello", StringLiteral::class, arr.tokens[0])
+            assert(it[0] is ArrToken)
+            val arrToken = it[0] as ArrToken
+            assertEquals(2, arrToken.tokens.size)
+            assertLiteral("hello", StringLiteral::class, arrToken.tokens[0])
 
             run {
-                assert(arr.tokens[1] is MapToken)
-                val mapToken = arr.tokens[1] as MapToken
+                assert(arrToken.tokens[1] is MapToken)
+                val mapToken = arrToken.tokens[1] as MapToken
                 assertEquals(2, mapToken.tokens.size)
                 assertLiteral("xx", StringLiteral::class, mapToken.tokens[0])
                 assertLiteral("there", StringLiteral::class, mapToken.tokens[1])
@@ -131,48 +132,58 @@ object TokenizerTest {
 
     @Test
     @Timeout(1)
+    fun testNil() {
+        val tokens = tokenize("nil")
+
+        assertEquals(1, tokens.size)
+        assertLiteral(null, NilLiteral::class, tokens[0])
+    }
+
+
+    @Test
+    @Timeout(1)
     fun testArr() {
         val tokens = tokenize("3 [-.21 'hey there' [true [(fn [x] x) '[rar]']] false]")
 
         assertEquals(2, tokens.size)
         assertLiteral(3, IntLiteral::class, tokens[0])
 
-        assert(tokens[1] is Arr)
-        val arr1 = tokens[1] as Arr
-        assertEquals(4, arr1.tokens.size)
-        assertLiteral(-0.21, DoubleLiteral::class, arr1.tokens[0])
-        assertLiteral("hey there", StringLiteral::class, arr1.tokens[1])
+        assert(tokens[1] is ArrToken)
+        val arrToken1 = tokens[1] as ArrToken
+        assertEquals(4, arrToken1.tokens.size)
+        assertLiteral(-0.21, DoubleLiteral::class, arrToken1.tokens[0])
+        assertLiteral("hey there", StringLiteral::class, arrToken1.tokens[1])
 
         run {
-            assert(arr1.tokens[2] is Arr)
-            val arr2 = arr1.tokens[2] as Arr
-            assertEquals(2, arr2.tokens.size)
-            assertLiteral(true, BooleanLiteral::class, arr2.tokens[0])
+            assert(arrToken1.tokens[2] is ArrToken)
+            val arrToken2 = arrToken1.tokens[2] as ArrToken
+            assertEquals(2, arrToken2.tokens.size)
+            assertLiteral(true, BooleanLiteral::class, arrToken2.tokens[0])
 
             run {
-                assert(arr2.tokens[1] is Arr)
-                val arr3 = arr2.tokens[1] as Arr
-                assertEquals(2, arr3.tokens.size)
+                assert(arrToken2.tokens[1] is ArrToken)
+                val arrToken3 = arrToken2.tokens[1] as ArrToken
+                assertEquals(2, arrToken3.tokens.size)
 
                 run {
-                    assert(arr3.tokens[0] is FnToken)
-                    val fnToken = arr3.tokens[0] as FnToken
+                    assert(arrToken3.tokens[0] is FnToken)
+                    val fnToken = arrToken3.tokens[0] as FnToken
                     assertEquals(3, fnToken.tokens.size)
                     assertLiteral("fn", Identifier::class, fnToken.tokens[0])
 
-                    assert(fnToken.tokens[1] is Arr)
-                    val arr4 = fnToken.tokens[1] as Arr
-                    assertEquals(1, arr4.tokens.size)
-                    assertLiteral("x", Identifier::class, arr4.tokens[0])
+                    assert(fnToken.tokens[1] is ArrToken)
+                    val arrToken4 = fnToken.tokens[1] as ArrToken
+                    assertEquals(1, arrToken4.tokens.size)
+                    assertLiteral("x", Identifier::class, arrToken4.tokens[0])
 
                     assertLiteral("x", Identifier::class, fnToken.tokens[2])
                 }
 
-                assertLiteral("[rar]", StringLiteral::class, arr3.tokens[1])
+                assertLiteral("[rar]", StringLiteral::class, arrToken3.tokens[1])
             }
         }
 
-        assertLiteral(false, BooleanLiteral::class, arr1.tokens[3])
+        assertLiteral(false, BooleanLiteral::class, arrToken1.tokens[3])
     }
 
     @Test
@@ -196,10 +207,10 @@ object TokenizerTest {
             assertLiteral("hello there!", StringLiteral::class, map.tokens[5])
 
             run {
-                val arr = map.tokens[6] as Arr
-                assertEquals(2, arr.tokens.size)
-                assertLiteral("a", StringLiteral::class, arr.tokens[0])
-                assertLiteral(1, IntLiteral::class, arr.tokens[1])
+                val arrToken = map.tokens[6] as ArrToken
+                assertEquals(2, arrToken.tokens.size)
+                assertLiteral("a", StringLiteral::class, arrToken.tokens[0])
+                assertLiteral(1, IntLiteral::class, arrToken.tokens[1])
             }
         }
 
@@ -223,9 +234,9 @@ object TokenizerTest {
             assertLiteral("fn", Identifier::class, fnToken.tokens[0])
 
             run {
-                assert(fnToken.tokens[1] is Arr)
-                val arr = fnToken.tokens[1] as Arr
-                assertLiteral("x", Identifier::class, arr.tokens[0])
+                assert(fnToken.tokens[1] is ArrToken)
+                val arrToken = fnToken.tokens[1] as ArrToken
+                assertLiteral("x", Identifier::class, arrToken.tokens[0])
             }
 
             run {
@@ -235,11 +246,11 @@ object TokenizerTest {
                 assertLiteral("let", Identifier::class, let.tokens[0])
 
                 run {
-                    assert(let.tokens[1] is Arr)
-                    val arr2 = let.tokens[1] as Arr
-                    assertEquals(2, arr2.tokens.size)
-                    assertLiteral("y", Identifier::class, arr2.tokens[0])
-                    assertLiteral(2, IntLiteral::class, arr2.tokens[1])
+                    assert(let.tokens[1] is ArrToken)
+                    val arrToken2 = let.tokens[1] as ArrToken
+                    assertEquals(2, arrToken2.tokens.size)
+                    assertLiteral("y", Identifier::class, arrToken2.tokens[0])
+                    assertLiteral(2, IntLiteral::class, arrToken2.tokens[1])
                 }
 
                 run {
@@ -253,11 +264,11 @@ object TokenizerTest {
             }
         }
 
-        assert(map.tokens[2] is Arr)
-        val arr3 = map.tokens[2] as Arr
-        assertEquals(2, arr3.tokens.size)
-        assertLiteral(2, IntLiteral::class, arr3.tokens[0])
-        assertLiteral(2, IntLiteral::class, arr3.tokens[1])
+        assert(map.tokens[2] is ArrToken)
+        val arrToken3 = map.tokens[2] as ArrToken
+        assertEquals(2, arrToken3.tokens.size)
+        assertLiteral(2, IntLiteral::class, arrToken3.tokens[0])
+        assertLiteral(2, IntLiteral::class, arrToken3.tokens[1])
     }
 
     @Test
@@ -281,23 +292,23 @@ object TokenizerTest {
             assertLiteral("test", Identifier::class, mapToken2.tokens[0])
 
             run {
-                assert(mapToken2.tokens[1] is Arr)
-                val arr = mapToken2.tokens[1] as Arr
-                assertEquals(3, arr.tokens.size)
-                assertLiteral(1, IntLiteral::class, arr.tokens[0])
-                assertLiteral(2, IntLiteral::class, arr.tokens[1])
+                assert(mapToken2.tokens[1] is ArrToken)
+                val arrToken = mapToken2.tokens[1] as ArrToken
+                assertEquals(3, arrToken.tokens.size)
+                assertLiteral(1, IntLiteral::class, arrToken.tokens[0])
+                assertLiteral(2, IntLiteral::class, arrToken.tokens[1])
 
                 run {
-                    assert(arr.tokens[2] is FnToken)
-                    val fnToken = arr.tokens[2] as FnToken
+                    assert(arrToken.tokens[2] is FnToken)
+                    val fnToken = arrToken.tokens[2] as FnToken
                     assertEquals(3, fnToken.tokens.size)
                     assertLiteral("fn", Identifier::class, fnToken.tokens[0])
 
                     run {
-                        assert(fnToken.tokens[1] is Arr)
-                        val arr2 = fnToken.tokens[1] as Arr
-                        assertEquals(1, arr2.tokens.size)
-                        assertLiteral("x", Identifier::class, arr2.tokens[0])
+                        assert(fnToken.tokens[1] is ArrToken)
+                        val arrToken2 = fnToken.tokens[1] as ArrToken
+                        assertEquals(1, arrToken2.tokens.size)
+                        assertLiteral("x", Identifier::class, arrToken2.tokens[0])
                     }
 
                     assertLiteral("x", Identifier::class, fnToken.tokens[2])

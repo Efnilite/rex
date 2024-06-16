@@ -1,4 +1,4 @@
-package dev.efnilite.rex
+package dev.efnilite.rex.token
 
 import java.io.File
 import kotlin.math.max
@@ -24,7 +24,7 @@ class Tokenizer(string: String) {
     }
 
     private fun tokenizeArr(): Token {
-        return tokenizeRecursive(']', "Missing closing brackets") { Arr(it) }
+        return tokenizeRecursive(']', "Missing closing brackets") { ArrToken(it) }
     }
 
     private fun tokenizeMp(): Token {
@@ -171,6 +171,7 @@ class Tokenizer(string: String) {
 
             token.lowercase() == "true" -> BooleanLiteral(true)
             token.lowercase() == "false" -> BooleanLiteral(false)
+            token.lowercase() == "nil" -> NilLiteral(null)
             else -> Identifier(token)
         }
     }
@@ -193,95 +194,26 @@ class Tokenizer(string: String) {
             "${" ".repeat(max(0, posInLine - 1))}^ $message"
         )
     }
+
+    companion object {
+        /**
+         * Tokenizes the provided string.
+         * @param string the string to tokenize.
+         * @return a list of tokens.
+         * @throws IllegalArgumentException if the provided string contains syntactic errors.
+         */
+        fun tokenize(string: String): List<Token> {
+            return Tokenizer(string).tokenize().tokens
+        }
+
+        /**
+         * Tokenizes the provided file.
+         * @param file the file to tokenize.
+         * @return a list of tokens.
+         * @throws IllegalArgumentException if the provided file contains syntactic errors.
+         */
+        fun tokenize(file: File): List<Token> {
+            return Tokenizer(file.readLines().joinToString("\n")).tokenize().tokens
+        }
+    }
 }
-
-/**
- * Tokenizes the provided string.
- * @param string the string to tokenize.
- * @return a list of tokens.
- * @throws IllegalArgumentException if the provided string contains syntactic errors.
- */
-fun tokenize(string: String): List<Token> {
-    return Tokenizer(string).tokenize().tokens
-}
-
-/**
- * Tokenizes the provided file.
- * @param file the file to tokenize.
- * @return a list of tokens.
- * @throws IllegalArgumentException if the provided file contains syntactic errors.
- */
-fun tokenize(file: File): List<Token> {
-    return Tokenizer(file.readLines().joinToString("\n")).tokenize().tokens
-}
-
-/**
- * Superclass of every valid thing.
- */
-interface Token
-
-/**
- * A literal value, such as a string or number.
- */
-interface Literal<T> {
-    val value: T
-}
-
-/**
- * A double literal.
- * @property value The number value.
- */
-data class DoubleLiteral(override val value: Double) : Token, Literal<Number>
-
-/**
- * An int literal.
- * @property value The number value.
- */
-data class IntLiteral(override val value: Int) : Token, Literal<Number>
-
-/**
- * A long literal.
- * @property value The number value.
- */
-data class LongLiteral(override val value: Long) : Token, Literal<Number>
-
-/**
- * A boolean literal.
- * @property value The boolean value.
- */
-data class BooleanLiteral(override val value: Boolean) : Token, Literal<Boolean>
-
-/**
- * A string literal.
- * @property value The string value.
- */
-data class StringLiteral(override val value: String) : Token, Literal<String>
-
-/**
- * An identifier.
- * @property value The identifier value.
- */
-data class Identifier(override val value: String) : Token, Literal<String>
-
-/**
- * Holds all tokens in the program.
- */
-data class Program(val tokens: List<Token>) : Token
-
-/**
- * An array.
- * @property tokens The tokens in the array.
- */
-data class Arr(val tokens: List<Token>) : Token
-
-/**
- * Any list of tokens in an S-expression.
- * @property tokens The tokens in the function call.
- */
-data class FnToken(val tokens: List<Token>) : Token
-
-/**
- * A map.
- * @property tokens The tokens in the map.
- */
-data class MapToken(val tokens: List<Token>) : Token
