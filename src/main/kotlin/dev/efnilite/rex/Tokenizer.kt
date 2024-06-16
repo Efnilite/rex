@@ -1,5 +1,6 @@
 package dev.efnilite.rex
 
+import java.io.File
 import kotlin.math.max
 
 /**
@@ -19,7 +20,7 @@ class Tokenizer(string: String) {
     }
 
     private fun tokenizeFn(): Token {
-        return tokenizeRecursive(')', "Missing closing parenthesis") { Fn(it) }
+        return tokenizeRecursive(')', "Missing closing parenthesis") { FnToken(it) }
     }
 
     private fun tokenizeArr(): Token {
@@ -27,7 +28,7 @@ class Tokenizer(string: String) {
     }
 
     private fun tokenizeMp(): Token {
-        return tokenizeRecursive('}', "Missing closing curly brackets") { Mp(it) }
+        return tokenizeRecursive('}', "Missing closing curly brackets") { MapToken(it) }
     }
 
     // go to next character
@@ -159,12 +160,12 @@ class Tokenizer(string: String) {
             token.matches(Regex("-?\\d*\\.?\\d+")) -> {
                 if (!token.contains(".")) {
                     try {
-                        NumberLiteral(token.toInt())
+                        IntLiteral(token.toInt())
                     } catch (e: NumberFormatException) {
-                        NumberLiteral(token.toLong())
+                        LongLiteral(token.toLong())
                     }
                 } else {
-                    NumberLiteral(token.toDouble())
+                    DoubleLiteral(token.toDouble())
                 }
             }
 
@@ -205,6 +206,16 @@ fun tokenize(string: String): List<Token> {
 }
 
 /**
+ * Tokenizes the provided file.
+ * @param file the file to tokenize.
+ * @return a list of tokens.
+ * @throws IllegalArgumentException if the provided file contains syntactic errors.
+ */
+fun tokenize(file: File): List<Token> {
+    return Tokenizer(file.readLines().joinToString("\n")).tokenize().tokens
+}
+
+/**
  * Superclass of every valid thing.
  */
 interface Token
@@ -217,10 +228,22 @@ interface Literal<T> {
 }
 
 /**
- * A number literal.
+ * A double literal.
  * @property value The number value.
  */
-data class NumberLiteral(override val value: Number) : Token, Literal<Number>
+data class DoubleLiteral(override val value: Double) : Token, Literal<Number>
+
+/**
+ * An int literal.
+ * @property value The number value.
+ */
+data class IntLiteral(override val value: Int) : Token, Literal<Number>
+
+/**
+ * A long literal.
+ * @property value The number value.
+ */
+data class LongLiteral(override val value: Long) : Token, Literal<Number>
 
 /**
  * A boolean literal.
@@ -255,10 +278,10 @@ data class Arr(val tokens: List<Token>) : Token
  * Any list of tokens in an S-expression.
  * @property tokens The tokens in the function call.
  */
-data class Fn(val tokens: List<Token>) : Token
+data class FnToken(val tokens: List<Token>) : Token
 
 /**
  * A map.
  * @property tokens The tokens in the map.
  */
-data class Mp(val tokens: List<Token>) : Token
+data class MapToken(val tokens: List<Token>) : Token
