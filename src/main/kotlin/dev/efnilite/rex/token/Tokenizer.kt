@@ -171,7 +171,7 @@ class Tokenizer(string: String) {
 
             token.lowercase() == "true" -> BooleanLiteral(true)
             token.lowercase() == "false" -> BooleanLiteral(false)
-            token.lowercase() == "nil" -> NilLiteral(null)
+            token.lowercase() == "nil" -> NilLiteral()
             else -> Identifier(token)
         }
     }
