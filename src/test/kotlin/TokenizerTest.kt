@@ -350,4 +350,16 @@ object TokenizerTest {
         assertFails { tokenize("{[{(fn [x] x} true ]}") }
         assertFails { tokenize("{ } true }") }
     }
+
+    @Test
+    @Timeout(1)
+    fun testCommas() {
+        val tokens = tokenize("1, 2.0, , 'hey, partner' 4")
+
+        assertEquals(4, tokens.size)
+        assertLiteral(1, IntLiteral::class, tokens[0])
+        assertLiteral(2.0, DoubleLiteral::class, tokens[1])
+        assertLiteral("hey, partner", StringLiteral::class, tokens[2])
+        assertLiteral(4, IntLiteral::class, tokens[3])
+    }
 }

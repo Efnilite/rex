@@ -98,6 +98,11 @@ class Tokenizer(string: String) {
                     break
                 }
 
+                // skip commas not in strings
+                ',' -> {
+                    next()
+                }
+
                 '\'' -> {
                     if (isString) {
                         tokens += StringLiteral(token)
