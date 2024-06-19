@@ -18,6 +18,8 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: maven
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
       - name: Run Gradle tests
         run: ./gradlew test
