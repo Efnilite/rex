@@ -19,5 +19,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
       - name: Run Gradle tests
-        run: sudo ./gradlew test
+        run: ./gradlew test
