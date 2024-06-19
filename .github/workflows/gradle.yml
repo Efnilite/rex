@@ -20,4 +20,4 @@ jobs:
           distribution: 'temurin'
           cache: gradle
       - name: Run Gradle tests
-        run: ./gradlew test
+        run: sudo ./gradlew test
