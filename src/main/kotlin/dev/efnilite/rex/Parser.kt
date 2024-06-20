@@ -22,6 +22,7 @@ object Parser {
             }
         }
 
+        // avoids returning ["hey"] instead of "hey" when single element is parsed
         return if (list.size == 1) list[0] else list
     }
 
