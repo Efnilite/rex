@@ -9,14 +9,20 @@ object Parser {
      * @param tokens The tokens to parse.
      * @return The parsed list of objects.
      */
-    fun parse(tokens: List<Token>): List<Any?> {
+    fun parse(tokens: List<Token>): Any? {
         val list = mutableListOf<Any?>()
 
         for (token in tokens) {
-            list.add(parse(token))
+            val parsed = parse(token)
+
+            list += if (parsed is Fn) {
+                parsed.invoke()
+            } else {
+                parsed
+            }
         }
 
-        return list
+        return if (list.size == 1) list[0] else list
     }
 
     private fun parse(token: Token): Any? {
@@ -25,13 +31,13 @@ object Parser {
             is MapToken -> parseMap(token)
             is ArrToken -> parseArr(token)
             is Literal<*> -> token.value
-            else -> error(token, "Invalid token")
+            else -> error("Invalid token")
         }
     }
 
     private fun parseFn(fn: FnToken): Fn {
         val tokens = fn.tokens
-        val identifier = tokens[0] as Identifier
+        val identifier = tokens[0] as IdentifierToken
 
         return Fn(identifier.value, tokens.drop(1).map { parse(it) }, Scope(null))
     }
@@ -41,7 +47,7 @@ object Parser {
 
         for (pair in mp.tokens.chunked(2)) {
             if (pair.size % 2 != 0) {
-                error(mp, "Map must have an even number of elements")
+                error("Map must have an even number of elements")
             }
 
             map[parse(pair[0])] = parse(pair[1])
@@ -54,15 +60,13 @@ object Parser {
         val list = mutableListOf<Any?>()
 
         for (token in arr.tokens) {
-            list.add(parse(token))
+            list += parse(token)
         }
 
         return Arr(list)
     }
 
-    private fun error(token: Token, message: String) {
-        throw IllegalArgumentException(
-            "Error at line TODO, character TODO\n$token^ $message"
-        )
+    private fun error(message: String) {
+        throw IllegalArgumentException(message)
     }
 }

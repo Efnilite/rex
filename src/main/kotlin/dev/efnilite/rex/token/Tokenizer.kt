@@ -154,7 +154,7 @@ class Tokenizer(string: String) {
 
     private fun checkLegality(char: Char) {
         when (char) {
-            '\\', '/', ')', ']', '}', '#', '\'' -> {
+            '\\', ')', ']', '}', '#', '\'' -> {
                 error("Illegal identifier")
             }
         }
