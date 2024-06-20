@@ -1,4 +1,4 @@
-package dev.efnilite.rex.token
+package dev.efnilite.rex
 
 import java.io.File
 import kotlin.math.max
@@ -195,8 +195,8 @@ class Tokenizer(string: String) {
 
         throw IllegalArgumentException(
             "Error at line $line, character $posInLine\n" +
-            "${fullLine().replace("\n", "")}\n" +
-            "${" ".repeat(max(0, posInLine - 1))}^ $message"
+                    "${fullLine().replace("\n", "")}\n" +
+                    "${" ".repeat(max(0, posInLine - 1))}^ $message"
         )
     }
 
@@ -222,3 +222,81 @@ class Tokenizer(string: String) {
         }
     }
 }
+
+/**
+ * Superclass of every valid thing.
+ */
+interface Token
+
+/**
+ * A map.
+ * @property tokens The tokens in the map.
+ */
+data class MapToken(val tokens: List<Token>) : Token
+
+/**
+ * A boolean literal.
+ * @property value The boolean value.
+ */
+data class NilToken(override val value: Nothing? = null) : Token, Literal<Nothing?>
+
+/**
+ * Holds all tokens in the program.
+ */
+data class ProgramToken(val tokens: List<Token>) : Token
+
+/**
+ * An array.
+ * @property tokens The tokens in the array.
+ */
+data class ArrToken(val tokens: List<Token>) : Token
+
+/**
+ * Any list of tokens in an S-expression.
+ * @property tokens The tokens in the function call.
+ */
+data class FnToken(val tokens: List<Token>) : Token
+
+/**
+ * A literal value, such as a string or number.
+ */
+interface Literal<T> {
+    val value: T
+}
+
+
+/**
+ * A string literal.
+ * @property value The string value.
+ */
+data class StringToken(override val value: String) : Token, Literal<String>
+
+/**
+ * A long literal.
+ * @property value The number value.
+ */
+data class LongToken(override val value: Long) : Token, Literal<Number>
+
+/**
+ * A boolean literal.
+ * @property value The boolean value.
+ */
+data class BooleanToken(override val value: Boolean) : Token, Literal<Boolean>
+
+/**
+ * A double literal.
+ * @property value The number value.
+ */
+data class DoubleToken(override val value: Double) : Token, Literal<Number>
+
+/**
+ * An identifier.
+ * @property value The identifier value.
+ */
+data class IdentifierToken(override val value: String) : Token, Literal<String>
+
+/**
+ * An int literal.
+ * @property value The number value.
+ */
+data class IntToken(override val value: Int) : Token, Literal<Number>
