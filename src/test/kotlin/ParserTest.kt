@@ -1,5 +1,5 @@
-import dev.efnilite.rex.parse.Parser.parse
-import dev.efnilite.rex.token.Tokenizer.Companion.tokenize
+import dev.efnilite.rex.Parser.parse
+import dev.efnilite.rex.Tokenizer.Companion.tokenize
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
