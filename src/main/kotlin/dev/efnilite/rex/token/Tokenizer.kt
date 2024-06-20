@@ -15,8 +15,8 @@ class Tokenizer(string: String) {
     private var posInLine = 1
     private var lineSoFar = ""
 
-    fun tokenize(): Program {
-        return tokenizeRecursive(null, "Reached end of file") { Program(it) } as Program
+    fun tokenize(): ProgramToken {
+        return tokenizeRecursive(null, "Reached end of file") { ProgramToken(it) } as ProgramToken
     }
 
     private fun tokenizeFn(): Token {
@@ -105,7 +105,7 @@ class Tokenizer(string: String) {
 
                 '\'' -> {
                     if (isString) {
-                        tokens += StringLiteral(token)
+                        tokens += StringToken(token)
                         isString = false
                         token = ""
                     } else if (token.isEmpty()) {
@@ -165,19 +165,19 @@ class Tokenizer(string: String) {
             token.matches(Regex("-?\\d*\\.?\\d+")) -> {
                 if (!token.contains(".")) {
                     try {
-                        IntLiteral(token.toInt())
+                        IntToken(token.toInt())
                     } catch (e: NumberFormatException) {
-                        LongLiteral(token.toLong())
+                        LongToken(token.toLong())
                     }
                 } else {
-                    DoubleLiteral(token.toDouble())
+                    DoubleToken(token.toDouble())
                 }
             }
 
-            token.lowercase() == "true" -> BooleanLiteral(true)
-            token.lowercase() == "false" -> BooleanLiteral(false)
-            token.lowercase() == "nil" -> NilLiteral()
-            else -> Identifier(token)
+            token.lowercase() == "true" -> BooleanToken(true)
+            token.lowercase() == "false" -> BooleanToken(false)
+            token.lowercase() == "nil" -> NilToken()
+            else -> IdentifierToken(token)
         }
     }
 
