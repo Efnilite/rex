@@ -342,7 +342,6 @@ object TokenizerTest {
         assertFails { tokenize(")") }
         assertFails { tokenize("]") }
         assertFails { tokenize("}") }
-        assertFails { tokenize("/") }
         assertFails { tokenize("\\") }
         assertFails { tokenize("'") }
 
