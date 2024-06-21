@@ -39,11 +39,15 @@ object Parser {
         }
     }
 
-    private fun parseFn(fn: FnToken): Fn {
+    private fun parseFn(fn: FnToken): Any {
         val tokens = fn.tokens
         val identifier = tokens[0] as IdentifierToken
 
-        return Fn(identifier.value, tokens.drop(1).map { parse(it) })
+        return if (identifier.value == "fn") {
+            DefinedFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+        } else {
+            Fn(identifier.value, tokens.drop(1).map { parse(it) })
+        }
     }
 
     private fun parseMap(mp: MapToken): Mp {
@@ -92,9 +96,9 @@ class Scope(private val parent: Scope? = null) {
     }
 
     override fun toString(): String {
-        val entries = refs.entries.joinToString(", ") { "${it.key}: ${it.value}" }
+        val entries = refs.entries.joinToString("\n") { "${it.key}: ${it.value}" }
 
-        return "Scope $entries"
+        return "Scope {\n$entries\n}"
     }
 }
 
@@ -117,6 +121,7 @@ class DefinedFn(
         }
 
         var result: Any? = null
+        println(scope)
         for (any in body) {
             if (any is Fn) {
                 result = any.invoke(scope)
@@ -142,9 +147,12 @@ data class Fn(val identifier: String, val args: List<Any?>) {
                 val functions = obj.javaClass.kotlin.memberFunctions
                 val method = functions.find { it.name == methodName }!!
 
-                method.call(RT, *args.toTypedArray())
+                val translated = args.map { if (it is String) scope.getReference(it) else it }
+
+                method.call(RT, *translated.toTypedArray())
             }
-            identifier == "def" -> {
+
+            identifier == "var" -> {
                 val name = args[0] as String
                 val value = args[1]
 
@@ -152,17 +160,14 @@ data class Fn(val identifier: String, val args: List<Any?>) {
 
                 name
             }
-            identifier == "fn" -> {
-                val params = args[0] as Arr
-                val body = args.drop(1)
 
-                DefinedFn(params, body)
-            }
             else -> {
                 val ref = scope.getReference(identifier)
 
                 if (ref is Fn) {
                     return ref.invoke(Scope(scope))
+                } else if (ref is DefinedFn) {
+                    return ref.invoke(args, Scope(scope))
                 }
 
                 null

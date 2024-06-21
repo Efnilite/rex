@@ -17,15 +17,15 @@ object ParserTest {
     fun testReferencing() {
         val result = parse(tokenize("(dev.efnilite.rex.RT/add 1 2)"))
 
-        assertIs<Int>(result)
         assertEquals(3, result)
     }
 
     @Test
     fun testDef() {
-        val result = parse(tokenize("(def + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 1 2)"))
+        val result = parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 1 2)")) as List<*>
 
-        println(result)
+        assertEquals("+", result[0])
+        assertEquals(3, result[1])
     }
 
     @Test
