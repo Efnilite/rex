@@ -123,7 +123,7 @@ object RT {
         return when (a) {
             is Int -> {
                 when (b) {
-                    is Int -> a / b.toDouble()
+                    is Int -> if (a % b == 0) a / b else a.toDouble() / b
                     is Double -> a / b
                     is Long -> a / b
                     else -> a / b.toString().toDouble()

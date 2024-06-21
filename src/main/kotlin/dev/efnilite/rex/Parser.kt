@@ -10,17 +10,20 @@ object Parser {
      * @return The parsed list of objects.
      */
     fun parse(tokens: List<Token>): Any? {
+        val scope = Scope(null)
         val list = mutableListOf<Any?>()
 
         for (token in tokens) {
             val parsed = parse(token)
 
             list += if (parsed is Fn) {
-                parsed.invoke()
+                parsed.invoke(scope)
             } else {
                 parsed
             }
         }
+
+        println(scope)
 
         // avoids returning ["hey"] instead of "hey" when single element is parsed
         return if (list.size == 1) list[0] else list
@@ -40,7 +43,7 @@ object Parser {
         val tokens = fn.tokens
         val identifier = tokens[0] as IdentifierToken
 
-        return Fn(identifier.value, tokens.drop(1).map { parse(it) }, Scope(null))
+        return Fn(identifier.value, tokens.drop(1).map { parse(it) })
     }
 
     private fun parseMap(mp: MapToken): Mp {
@@ -87,26 +90,36 @@ class Scope(private val parent: Scope? = null) {
 
         return parent?.getReference(name)
     }
+
+    override fun toString(): String {
+        val entries = refs.entries.joinToString(", ") { "${it.key}: ${it.value}" }
+
+        return "Scope $entries"
+    }
 }
 
-class DefinedFn(private val params: List<String>,
-                private val body: List<Any?>,
-                private val scope: Scope
+class DefinedFn(
+    private val params: Arr,
+    private val body: List<Any?>
 ) {
 
-    fun invoke(args: List<Any?>): Any? {
+    fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (params.size != args.size) {
             throw IllegalArgumentException("Expected ${params.size} arguments, got ${args.size}")
         }
 
         for ((idx, arg) in args.withIndex()) {
-            scope.setReference(params[idx], arg)
+            if (params[idx] !is String) {
+                throw IllegalArgumentException("Expected a string, got ${params[idx]}")
+            }
+
+            scope.setReference(params[idx] as String, arg)
         }
 
         var result: Any? = null
         for (any in body) {
             if (any is Fn) {
-                result = any.invoke()
+                result = any.invoke(scope)
             }
         }
 
@@ -118,26 +131,43 @@ class DefinedFn(private val params: List<String>,
     }
 }
 
-data class Fn(val identifier: String, val args: List<Any?>, val scope: Scope) {
+data class Fn(val identifier: String, val args: List<Any?>) {
 
-    fun invoke(): Any? {
-        if (identifier.contains(".")) {
-            val (className, methodName) = identifier.split("/")
+    fun invoke(scope: Scope): Any? {
+        return when {
+            identifier.contains(".") && identifier.contains("/") -> {
+                val (className, methodName) = identifier.split("/")
 
-            val obj = Class.forName(className).kotlin.objectInstance!!
-            val functions = obj.javaClass.kotlin.memberFunctions
-            val method = functions.find { it.name == methodName }!!
+                val obj = Class.forName(className).kotlin.objectInstance!!
+                val functions = obj.javaClass.kotlin.memberFunctions
+                val method = functions.find { it.name == methodName }!!
 
-            return method.call(RT, *args.toTypedArray())
+                method.call(RT, *args.toTypedArray())
+            }
+            identifier == "def" -> {
+                val name = args[0] as String
+                val value = args[1]
+
+                scope.setReference(name, value)
+
+                name
+            }
+            identifier == "fn" -> {
+                val params = args[0] as Arr
+                val body = args.drop(1)
+
+                DefinedFn(params, body)
+            }
+            else -> {
+                val ref = scope.getReference(identifier)
+
+                if (ref is Fn) {
+                    return ref.invoke(Scope(scope))
+                }
+
+                null
+            }
         }
-
-        val ref = scope.getReference(identifier)
-
-        if (ref is Fn) {
-            return ref.invoke()
-        }
-
-        return null
     }
 
     override fun toString(): String {
@@ -155,6 +185,16 @@ data class Mp(val elements: Map<Any?, Any?>) {
 }
 
 data class Arr(val values: List<Any?>) {
+
+    val size get() = values.size
+
+    operator fun get(index: Int): Any? {
+        return values[index]
+    }
+
+    fun joinToString(separator: String): String {
+        return values.joinToString(separator)
+    }
 
     override fun toString(): String {
         return "[${values.joinToString(" ")}]"
