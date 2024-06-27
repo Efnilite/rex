@@ -1,3 +1,6 @@
+import dev.efnilite.rex.Arr
+import dev.efnilite.rex.DefinedFn
+import dev.efnilite.rex.Mp
 import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Tokenizer.Companion.tokenize
 import org.junit.jupiter.api.Test
@@ -10,27 +13,65 @@ object ParserTest {
     @Test
     fun testParse() {
         println(parse(tokenize("(+ {2 [3 'false'] nil (- 2 2)} 1 2)")))
-        println(parse(tokenize("(defn add [a b] (+ a b))")))
+        println(parse(tokenize("(def add [a b] (+ a b))")))
     }
 
     @Test
     fun testReferencing() {
-        val result = parse(tokenize("(dev.efnilite.rex.RT/add 1 2)"))
-
-        assertEquals(3, result)
+        assertEquals(3, parse(tokenize("(dev.efnilite.rex.RT/add 1 2)")))
     }
 
     @Test
-    fun testDef() {
-        val result = parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 1 2)")) as List<*>
+    fun testDefinedFnAsIdentifier() {
+        assertEquals(3, parse(tokenize("((fn [x y] (dev.efnilite.rex.RT/add x y)) 1 2)")))
+    }
 
-        assertEquals("+", result[0])
+    @Test
+    fun testVar() {
+        parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 1 2)")).let {
+            it as List<*>
+
+            assertEquals("+", it[0])
+            assertEquals(3, it[1])
+        }
+
+        parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) ((fn [x y] (+ x y)) 1 2)")).let {
+            it as List<*>
+
+            assertEquals("+", it[0])
+            assertEquals(3, it[1])
+        }
+
+        assertFails { parse(tokenize("(var var)")) }
+        assertFails { parse(tokenize("(var true false)")) }
+        assertFails { parse(tokenize("(var 1 2)")) }
+        assertFails { parse(tokenize("(var nil 0)")) }
+        assertFails { parse(tokenize("(var [{a 2 b 4} x] 0)")) }
+        assertFails { parse(tokenize("(var {} 0)")) }
+        assertFails { parse(tokenize("(var (fn [x] x) 0)")) }
+    }
+
+    @Test
+    fun testArray() {
+        val result = parse(tokenize("[2 3 4]"))
+
+        result as Arr
+
+        assertEquals(2, result[0])
         assertEquals(3, result[1])
+        assertEquals(4, result[2])
     }
 
     @Test
-    fun testMp() {
+    fun testMap() {
         assertFails { parse(tokenize("{2 3 4}")) }
+
+        parse(tokenize("{2 3 'balls' (fn [x] x)}")).let {
+            it as Mp
+
+            assertEquals(3, it[2])
+            assertIs<DefinedFn>(it["balls"])
+        }
     }
 
     @Test

@@ -23,8 +23,6 @@ object Parser {
             }
         }
 
-        println(scope)
-
         // avoids returning ["hey"] instead of "hey" when single element is parsed
         return if (list.size == 1) list[0] else list
     }
@@ -41,12 +39,12 @@ object Parser {
 
     private fun parseFn(fn: FnToken): Any {
         val tokens = fn.tokens
-        val identifier = tokens[0] as IdentifierToken
+        val identifier = tokens[0]
 
-        return if (identifier.value == "fn") {
+        return if (identifier is IdentifierToken && identifier.value == "fn") {
             DefinedFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
         } else {
-            Fn(identifier.value, tokens.drop(1).map { parse(it) })
+            Fn(parse(identifier), tokens.drop(1).map { parse(it) })
         }
     }
 
@@ -72,10 +70,6 @@ object Parser {
         }
 
         return Arr(list)
-    }
-
-    private fun error(message: String) {
-        throw IllegalArgumentException(message)
     }
 }
 
@@ -109,19 +103,18 @@ class DefinedFn(
 
     fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (params.size != args.size) {
-            throw IllegalArgumentException("Expected ${params.size} arguments, got ${args.size}")
+            error("Expected ${params.size} arguments, got ${args.size}")
         }
 
         for ((idx, arg) in args.withIndex()) {
             if (params[idx] !is String) {
-                throw IllegalArgumentException("Expected a string, got ${params[idx]}")
+                error("Expected a string, got ${params[idx]}")
             }
 
             scope.setReference(params[idx] as String, arg)
         }
 
         var result: Any? = null
-        println(scope)
         for (any in body) {
             if (any is Fn) {
                 result = any.invoke(scope)
@@ -136,51 +129,67 @@ class DefinedFn(
     }
 }
 
-data class Fn(val identifier: String, val args: List<Any?>) {
+data class Fn(val identifier: Any?, val args: List<Any?>) {
 
     fun invoke(scope: Scope): Any? {
-        return when {
-            identifier.contains(".") && identifier.contains("/") -> {
-                val (className, methodName) = identifier.split("/")
+        return when (identifier) {
+            is Fn -> identifier.invoke(Scope(scope))
+            is DefinedFn -> identifier.invoke(args, Scope(scope))
+            is String -> {
+                when {
+                    identifier.contains(".") && identifier.contains("/") -> {
+                        val (className, methodName) = identifier.split("/")
 
-                val obj = Class.forName(className).kotlin.objectInstance!!
-                val functions = obj.javaClass.kotlin.memberFunctions
-                val method = functions.find { it.name == methodName }!!
+                        val obj = Class.forName(className).kotlin.objectInstance!!
+                        val functions = obj.javaClass.kotlin.memberFunctions
+                        val method = functions.find { it.name == methodName }!!
 
-                val translated = args.map { if (it is String) scope.getReference(it) else it }
+                        val translated = args.map { if (it is String) scope.getReference(it) else it }
 
-                method.call(RT, *translated.toTypedArray())
-            }
+                        method.call(RT, *translated.toTypedArray())
+                    }
 
-            identifier == "var" -> {
-                val name = args[0] as String
-                val value = args[1]
+                    identifier == "var" -> {
+                        if (args.size != 2) {
+                            error("Expected 2 arguments, got ${args.size}")
+                        }
 
-                scope.setReference(name, value)
+                        val name = args[0] as String
+                        val value = args[1]
 
-                name
-            }
+                        scope.setReference(name, value)
 
-            else -> {
-                val ref = scope.getReference(identifier)
+                        name
+                    }
 
-                if (ref is Fn) {
-                    return ref.invoke(Scope(scope))
-                } else if (ref is DefinedFn) {
-                    return ref.invoke(args, Scope(scope))
+                    else -> {
+                        val ref = scope.getReference(identifier)
+
+                        if (ref is Fn) {
+                            return ref.invoke(Scope(scope))
+                        } else if (ref is DefinedFn) {
+                            return ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
+                        }
+
+                        null
+                    }
                 }
-
-                null
             }
+
+            else -> error("Invalid function identifier type ${identifier!!::class.simpleName}")
         }
     }
 
     override fun toString(): String {
-        return "ReferencedFn($identifier ${args.joinToString(" ")})"
+        return "Fn($identifier ${args.joinToString(" ")})"
     }
 }
 
 data class Mp(val elements: Map<Any?, Any?>) {
+
+    operator fun get(key: Any?): Any? {
+        return elements[key]
+    }
 
     override fun toString(): String {
         val entries = elements.entries.joinToString(", ") { "${it.key}: ${it.value}" }
@@ -204,4 +213,8 @@ data class Arr(val values: List<Any?>) {
     override fun toString(): String {
         return "[${values.joinToString(" ")}]"
     }
+}
+
+private fun error(message: String) {
+    throw IllegalArgumentException(message)
 }
