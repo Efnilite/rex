@@ -202,6 +202,14 @@ data class Arr(val values: List<Any?>) {
 
     val size get() = values.size
 
+    fun drop(n: Int): Arr {
+        return Arr(values.drop(n))
+    }
+
+    fun take(n: Int): Arr {
+        return Arr(values.take(n))
+    }
+
     operator fun get(index: Int): Any? {
         return values[index]
     }
@@ -212,6 +220,10 @@ data class Arr(val values: List<Any?>) {
 
     override fun toString(): String {
         return "[${values.joinToString(" ")}]"
+    }
+
+    operator fun iterator(): Iterator<Any?> {
+        return values.iterator()
     }
 }
 

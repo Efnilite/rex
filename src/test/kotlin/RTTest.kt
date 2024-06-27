@@ -1,8 +1,37 @@
+import dev.efnilite.rex.Arr
 import dev.efnilite.rex.RT
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 object RTTest {
+
+    @Test
+    fun testDrop() {
+        assertEquals(Arr(listOf(3, 4)), RT.drop(2, Arr(listOf(1, 2, 3, 4))))
+        assertEquals(Arr(emptyList()), RT.drop(2, Arr(listOf(1))))
+        assertEquals("llo", RT.drop(2, "Hello"))
+        assertEquals("", RT.drop(2, "H"))
+
+        assertFails { RT.drop(2, 1) }
+        assertFails { RT.drop(-1, Arr(emptyList())) }
+    }
+
+    @Test
+    fun testTake() {
+        assertEquals(Arr(listOf(1, 2)), RT.take(2, Arr(listOf(1, 2, 3, 4))))
+        assertEquals(Arr(listOf(1)), RT.take(2, Arr(listOf(1))))
+        assertEquals("He", RT.take(2, "Hello"))
+        assertEquals("H", RT.take(2, "H"))
+
+        assertFails { RT.take(2, 1) }
+        assertFails { RT.take(-1, Arr(emptyList())) }
+    }
+
+    @Test
+    fun testReduce() {
+        // TODO!
+    }
 
     @Test
     fun testAdd() {

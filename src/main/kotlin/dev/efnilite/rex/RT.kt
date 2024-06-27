@@ -2,6 +2,32 @@ package dev.efnilite.rex
 
 object RT {
 
+    fun take(n: Any?, coll: Any?): Any {
+        return when (coll) {
+            is Arr -> coll.take(n as Int)
+            is String -> coll.take(n as Int)
+            else -> error("Invalid collection")
+        }
+    }
+
+    fun drop(n: Any?, coll: Any?): Any {
+        return when (coll) {
+            is Arr -> coll.drop(n as Int)
+            is String -> coll.drop(n as Int)
+            else -> error("Invalid collection")
+        }
+    }
+
+    fun reduce(fn: DefinedFn, initial: Any?, coll: Any?): Any? {
+        var acc = initial
+
+        for (element in coll as Arr) {
+            acc = fn.invoke(listOf(acc, element), Scope(null)) // todo remove Scope(null)
+        }
+
+        return acc
+    }
+
     fun add(a: Any?, b: Any?): Number {
         return when (a) {
             is Int -> {
