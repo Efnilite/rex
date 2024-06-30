@@ -90,6 +90,16 @@ class Scope(private val parent: Scope? = null) {
         return parent?.getReference(name)
     }
 
+    fun getRootScope(): Scope {
+        var scope = this
+
+        while (scope.parent != null) {
+            scope = scope.parent!!
+        }
+
+        return scope
+    }
+
     override fun toString(): String {
         val entries = refs.entries.joinToString("\n") { "${it.key}: ${it.value}" }
 
@@ -138,8 +148,10 @@ class AnonymousFn(
 
         var result: Any? = null
         for (any in body) {
-            if (any is Fn) {
-                result = any.invoke(scope)
+            result = when (any) {
+                is Fn -> any.invoke(scope)
+                is String -> scope.getReference(any) ?: any
+                else -> any
             }
         }
 
@@ -150,6 +162,16 @@ class AnonymousFn(
         return "AnonymousFn(${params.joinToString(" ")} $body)"
     }
 }
+
+/**
+ * Represents a function defined with `defn`.
+ *
+ * @param doc The documentation of the function.
+ * @param fns The functions defined in the `defn`.
+ * The key is the arity of the function.
+ * `-arity` should be used for variadic functions.
+ */
+data class DefinedFn(val doc: String = "", val fns: Map<Int, AnonymousFn>)
 
 /**
  * Represents an S-expression.
@@ -181,49 +203,82 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
             is AnonymousFn -> identifier.invoke(args, Scope(scope))
             is String -> {
                 when {
-                    identifier.contains(".") && identifier.contains("/") -> {
-                        val (className, methodName) = identifier.split("/")
-
-                        val obj = Class.forName(className).kotlin.objectInstance!!
-                        val functions = obj.javaClass.kotlin.memberFunctions
-                        val method = functions.find { it.name == methodName }!!
-
-                        val translated = args.map { if (it is String) scope.getReference(it) else it }
-
-                        method.call(RT, *translated.toTypedArray(), scope)
-                    }
-
-                    identifier == "var" -> {
-                        if (args.size != 2) {
-                            error("Expected 2 arguments, got ${args.size}")
-                        }
-
-                        val name = args[0] as String
-                        val value = args[1]
-
-                        scope.setReference(name, value)
-
-                        name
-                    }
-
-                    else -> {
-                        val ref = scope.getReference(identifier)
-
-                        if (ref is Fn) {
-                            return ref.invoke(Scope(scope))
-                        } else if (ref is AnonymousFn) {
-                            return ref.invoke(
-                                args.map { if (it is String) scope.getReference(it) else it },
-                                Scope(scope)
-                            )
-                        }
-
-                        null
-                    }
+                    identifier.contains(".") && identifier.contains("/") -> invokeReference(scope)
+                    identifier == "var" -> invokeVar(scope)
+                    identifier == "defn" -> invokeDefn(scope)
+                    else -> invokeElse(scope)
                 }
             }
 
             else -> error("Invalid function identifier type ${identifier!!::class.simpleName}")
+        }
+    }
+
+    private fun invokeReference(scope: Scope): Any? {
+        val (className, methodName) = (identifier as String).split("/")
+
+        val obj = Class.forName(className).kotlin.objectInstance!!
+        val functions = obj.javaClass.kotlin.memberFunctions
+        val method = functions.find { it.name == methodName }!!
+
+        val translated = args.map { if (it is String) scope.getReference(it) else it }
+
+        return method.call(RT, *translated.toTypedArray(), scope)
+    }
+
+    private fun invokeVar(scope: Scope): String {
+        if (args.size != 2) {
+            error("Expected 2 arguments, got ${args.size}")
+        }
+
+        val name = args[0] as String
+        val value = args[1]
+
+        scope.setReference(name, value)
+
+        return name
+    }
+
+    private fun invokeDefn(scope: Scope): String {
+        val name = args[0] as String
+        val hasDoc = args[1] is String
+        val pairs = args.drop(if (hasDoc) 2 else 1).chunked(2) // skip doc
+
+        val fns = pairs.map { (params, body) ->
+            if (params !is Arr) error("Invalid function definition")
+
+            if (params.contains("&")) {
+                if (params.indexOf("&") + 1 != params.size - 1) error("& must be followed by one other argument")
+
+                return@map -(params.size - 1) to AnonymousFn(params, listOf(body))
+            }
+
+            return@map params.size to AnonymousFn(params, listOf(body))
+        }.toMap()
+
+        scope.getRootScope().setReference(name, DefinedFn(if (hasDoc) args[1] as String else "", fns))
+
+        return name
+    }
+
+    private fun invokeElse(scope: Scope): Any? {
+        return when (val ref = scope.getReference(identifier as String)) {
+            is Fn -> ref.invoke(Scope(scope))
+            is AnonymousFn -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
+            is DefinedFn -> {
+                if (ref.fns.containsKey(args.size)) {
+                    return ref.fns[args.size]!!.invoke(args, Scope(scope))
+                } else if (ref.fns.any { it.key < 0 }) {
+                    val (paramCount, value) = ref.fns.entries.firstOrNull { it.key < 0 }!!
+
+                    if (args.size > -paramCount) error("Expected at least ${-paramCount} arguments, got ${args.size}")
+
+                    return value.invoke(args, Scope(scope))
+                } else {
+                    error("No function $identifier with arity ${args.size}")
+                }
+            }
+            else -> null
         }
     }
 
@@ -242,6 +297,8 @@ data class Mp(val elements: Map<Any?, Any?>) {
 
     constructor(vararg elements: Pair<Any?, Any?>) : this(elements.toMap())
 
+    val size get() = elements.size
+
     operator fun get(key: Any?): Any? {
         return elements[key]
     }
@@ -253,6 +310,12 @@ data class Mp(val elements: Map<Any?, Any?>) {
     }
 }
 
+/**
+ * Represents an array.
+ *
+ * @param values The values of the array.
+ * @constructor Creates an array with the provided values.
+ */
 data class Arr(val values: List<Any?>) {
 
     constructor(vararg values: Any?) : this(values.toList())
@@ -265,6 +328,14 @@ data class Arr(val values: List<Any?>) {
 
     fun take(n: Int): Arr {
         return Arr(values.take(n))
+    }
+
+    fun indexOf(value: Any?): Int {
+        return values.indexOf(value)
+    }
+
+    fun contains(value: Any?): Boolean {
+        return values.contains(value)
     }
 
     operator fun get(index: Int): Any? {
@@ -284,6 +355,6 @@ data class Arr(val values: List<Any?>) {
     }
 }
 
-private fun error(message: String) {
+private fun error(message: String): Nothing {
     throw IllegalArgumentException(message)
 }
