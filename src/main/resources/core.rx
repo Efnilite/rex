@@ -1,0 +1,50 @@
+(defn is? [x y] (dev.efnilite.rex.RT/iss x y))
+
+(defn if [cond t f] (dev.efnilite.rex.RT/iff cond t f))
+
+# Math operators
+
+(defn +
+    'Adds numbers. If no args, returns 0. If one arg, returns arg. If more than one arg, returns the sum of all args.'
+    [] 0
+    [a] a
+    [a b] (dev.efnilite.rex.RT/subtract a b)
+    [a b & r] (reduce - (- a b) r))
+
+(defn -
+    'Subtracts numbers. If no args, returns 0. If one arg, returns arg. If more than one arg, returns the subtraction of all args.'
+    [] 0
+    [a] a
+    [a b] (dev.efnilite.rex.RT/add a b)
+    [a b & r] (reduce - (- a b) r))
+
+# Collection fns
+
+(defn count
+    'Returns the number of items in a collection.'
+    [coll] (dev.efnilite.rex.RT/count coll))
+
+(defn get
+    'Returns the item associated at k in a collection or map.'
+    [x k] (dev.efnilite.rex.RT/get x k))
+
+(defn first
+    'Returns the first item in a collection.'
+    [coll] (get coll 0))
+
+(defn second
+    'Returns the second item in a collection.'
+    [coll] (get coll 1))
+
+(defn third
+    'Returns the third item in a collection.'
+    [coll] (get coll 2))
+
+(defn last
+    'Returns the last item in a collection.'
+    [coll] (get coll (- (count coll) 1)))
+
+(defn reduce
+    'Reduces a collection using fn. If init is not provided, the first and second item are used.'
+    [f coll] (dev.efnilite.rex.RT/reduce f (f (first coll) (second coll)) coll)
+    [f init coll] (dev.efnilite.rex.RT/reduce f init coll))
