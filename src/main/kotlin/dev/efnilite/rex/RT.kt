@@ -1,8 +1,13 @@
 package dev.efnilite.rex
 
+/**
+ * Represents runtime functions.
+ *
+ * TODO: remove sending scope to every fn lol
+ */
 object RT {
 
-    fun take(n: Any?, coll: Any?): Any {
+    fun take(n: Any?, coll: Any?, scope: Scope = Scope(null)): Any {
         return when (coll) {
             is Arr -> coll.take(n as Int)
             is String -> coll.take(n as Int)
@@ -10,7 +15,7 @@ object RT {
         }
     }
 
-    fun drop(n: Any?, coll: Any?): Any {
+    fun drop(n: Any?, coll: Any?, scope: Scope = Scope(null)): Any {
         return when (coll) {
             is Arr -> coll.drop(n as Int)
             is String -> coll.drop(n as Int)
@@ -18,17 +23,22 @@ object RT {
         }
     }
 
-    fun reduce(fn: DefinedFn, initial: Any?, coll: Any?): Any? {
+    fun reduce(fn: Any?, initial: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
+        if (fn !is DefinedFn) error("Invalid function")
+        if (coll !is Arr) error("Invalid collection")
+
         var acc = initial
 
-        for (element in coll as Arr) {
-            acc = fn.invoke(listOf(acc, element), Scope(null)) // todo remove Scope(null)
+        for (element in coll) {
+            println(acc)
+            println(element)
+            acc = fn.invoke(listOf(acc, element), scope)
         }
 
         return acc
     }
 
-    fun add(a: Any?, b: Any?): Number {
+    fun add(a: Any?, b: Any?, scope: Scope = Scope(null)): Any {
         return when (a) {
             is Int -> {
                 when (b) {
@@ -67,7 +77,7 @@ object RT {
         }
     }
 
-    fun subtract(a: Any?, b: Any?): Number {
+    fun subtract(a: Any?, b: Any?, scope: Scope = Scope(null)): Any {
         return when (a) {
             is Int -> {
                 when (b) {
@@ -106,7 +116,7 @@ object RT {
         }
     }
 
-    fun multiply(a: Any?, b: Any?): Number {
+    fun multiply(a: Any?, b: Any?, scope: Scope = Scope(null)): Any {
         return when (a) {
             is Int -> {
                 when (b) {
@@ -145,7 +155,7 @@ object RT {
         }
     }
 
-    fun divide(a: Any?, b: Any?): Number {
+    fun divide(a: Any?, b: Any?, scope: Scope = Scope(null)): Any {
         return when (a) {
             is Int -> {
                 when (b) {

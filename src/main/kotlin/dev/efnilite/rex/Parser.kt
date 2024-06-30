@@ -146,7 +146,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
 
                         val translated = args.map { if (it is String) scope.getReference(it) else it }
 
-                        method.call(RT, *translated.toTypedArray())
+                        method.call(RT, *translated.toTypedArray(), scope)
                     }
 
                     identifier == "var" -> {
