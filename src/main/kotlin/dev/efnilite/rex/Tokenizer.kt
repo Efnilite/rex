@@ -181,7 +181,7 @@ class Tokenizer(string: String) {
         }
     }
 
-    private fun error(message: String) {
+    private fun error(message: String): Nothing {
         val fullLine = {
             var line = lineSoFar
 
@@ -263,7 +263,6 @@ data class FnToken(val tokens: List<Token>) : Token
 interface Literal<T> {
     val value: T
 }
-
 
 /**
  * A string literal.
