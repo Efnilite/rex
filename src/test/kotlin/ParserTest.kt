@@ -1,5 +1,5 @@
 import dev.efnilite.rex.Arr
-import dev.efnilite.rex.DefinedFn
+import dev.efnilite.rex.AnonymousFn
 import dev.efnilite.rex.Mp
 import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Tokenizer.Companion.tokenize
@@ -84,7 +84,7 @@ object ParserTest {
             it as Mp
 
             assertEquals(3, it[2])
-            assertIs<DefinedFn>(it["balls"])
+            assertIs<AnonymousFn>(it["balls"])
         }
     }
 

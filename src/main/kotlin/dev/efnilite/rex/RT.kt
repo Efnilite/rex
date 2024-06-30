@@ -24,14 +24,12 @@ object RT {
     }
 
     fun reduce(fn: Any?, initial: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
-        if (fn !is DefinedFn) error("Invalid function")
+        if (fn !is AnonymousFn) error("Invalid function")
         if (coll !is Arr) error("Invalid collection")
 
         var acc = initial
 
         for (element in coll) {
-            println(acc)
-            println(element)
             acc = fn.invoke(listOf(acc, element), scope)
         }
 

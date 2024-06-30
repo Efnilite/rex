@@ -6,6 +6,7 @@ object Parser {
 
     /**
      * Parse the provided tokens into a list of objects.
+     *
      * @param tokens The tokens to parse.
      * @return The parsed list of objects.
      */
@@ -42,7 +43,7 @@ object Parser {
         val identifier = tokens[0]
 
         return if (identifier is IdentifierToken && identifier.value == "fn") {
-            DefinedFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            AnonymousFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
         } else {
             Fn(parse(identifier), tokens.drop(1).map { parse(it) })
         }
@@ -96,11 +97,32 @@ class Scope(private val parent: Scope? = null) {
     }
 }
 
-class DefinedFn(
+/**
+ * Represents an anonymous function.
+ *
+ * These have `fn` as identifier, with used params as a possibly empty [Arr] and a body to evaluate on invocation.
+ * Return value is the last evaluated expression in the body.
+ *
+ * @param params An array with the params of the fn.
+ * @param body The expressions in the fn that act as the body.
+ * @constructor Creates an anonymous function with the provided parameters and body.
+ */
+class AnonymousFn(
     private val params: Arr,
     private val body: List<Any?>
 ) {
 
+    /**
+     * Invokes this anonymous function with the provided arguments.
+     *
+     * Replaces the params with the provided arguments in the scope and evaluates the body.
+     *
+     * @param args The arguments to replace the params with.
+     * @param scope The scope to evaluate the body in. Contains the parent scope.
+     * @return The result of the last evaluated expression in the body.
+     * @throws IllegalArgumentException If the number of arguments does not match the number of params.
+     * @throws IllegalArgumentException If a param is not a string.
+     */
     fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (params.size != args.size) {
             error("Expected ${params.size} arguments, got ${args.size}")
@@ -125,16 +147,38 @@ class DefinedFn(
     }
 
     override fun toString(): String {
-        return "DefinedFn(${params.joinToString(" ")} $body)"
+        return "AnonymousFn(${params.joinToString(" ")} $body)"
     }
 }
 
+/**
+ * Represents an S-expression.
+ *
+ * These have an identifier (the first argument) and a list of remaining arguments.
+ *
+ * @param identifier The identifier of the function.
+ * @param args The arguments to pass to the function.
+ * @constructor Creates an S-expression with the provided identifier and arguments.
+ */
 data class Fn(val identifier: Any?, val args: List<Any?>) {
 
+    /**
+     * Invokes this S-expression with the provided scope.
+     *
+     * - If the identifier is a different S-expression, invokes it first.
+     * - If the identifier is an anonymous function, invokes it with the provided arguments.
+     * - If the identifier is a reference to an existing class and method, invoke it with arguments.
+     * - If the identifier is for setting a variable, set the variable to the value of the second argument.
+     * - If the identifier is a reference to an existing function, invoke it.
+     *
+     * @param scope The scope to evaluate the function in. Contains the parent scope.
+     * @return The result of the invoked function. May be null.
+     * @throws IllegalArgumentException If the provided identifier is not invocable.
+     */
     fun invoke(scope: Scope): Any? {
         return when (identifier) {
             is Fn -> identifier.invoke(Scope(scope))
-            is DefinedFn -> identifier.invoke(args, Scope(scope))
+            is AnonymousFn -> identifier.invoke(args, Scope(scope))
             is String -> {
                 when {
                     identifier.contains(".") && identifier.contains("/") -> {
@@ -167,8 +211,11 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
 
                         if (ref is Fn) {
                             return ref.invoke(Scope(scope))
-                        } else if (ref is DefinedFn) {
-                            return ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
+                        } else if (ref is AnonymousFn) {
+                            return ref.invoke(
+                                args.map { if (it is String) scope.getReference(it) else it },
+                                Scope(scope)
+                            )
                         }
 
                         null
@@ -185,7 +232,15 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     }
 }
 
+/**
+ * Represents a map.
+ *
+ * @param elements The elements of the map.
+ * @constructor Creates a map with the provided elements.
+ */
 data class Mp(val elements: Map<Any?, Any?>) {
+
+    constructor(vararg elements: Pair<Any?, Any?>) : this(elements.toMap())
 
     operator fun get(key: Any?): Any? {
         return elements[key]
@@ -199,6 +254,8 @@ data class Mp(val elements: Map<Any?, Any?>) {
 }
 
 data class Arr(val values: List<Any?>) {
+
+    constructor(vararg values: Any?) : this(values.toList())
 
     val size get() = values.size
 
