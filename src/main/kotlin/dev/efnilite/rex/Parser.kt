@@ -116,6 +116,8 @@ class Scope(private val parent: Scope? = null) {
  * @param params An array with the params of the fn.
  * @param body The expressions in the fn that act as the body.
  * @constructor Creates an anonymous function with the provided parameters and body.
+ * TODO vararg params
+ * TODO interface with DefinedFn
  */
 class AnonymousFn(
     private val params: Arr,
@@ -171,7 +173,29 @@ class AnonymousFn(
  * The key is the arity of the function.
  * `-arity` should be used for variadic functions.
  */
-data class DefinedFn(val doc: String = "", val fns: Map<Int, AnonymousFn>)
+data class DefinedFn(val doc: String = "", val fns: Map<Int, AnonymousFn>) {
+
+    fun invoke(args: List<Any?>, scope: Scope): Any? {
+        if (fns.containsKey(args.size)) {
+            return fns[args.size]!!.invoke(args, scope)
+        } else if (fns.any { it.key < 0 }) {
+            val (paramCount, value) = fns.entries.firstOrNull { it.key < 0 }!!
+
+            println(paramCount)
+            println(value)
+
+            if (args.size < -paramCount) error("Expected at least ${-paramCount} arguments, got ${args.size}")
+
+            return value.invoke(args, scope)
+        } else {
+            error("No function with arity ${args.size}")
+        }
+    }
+
+    override fun toString(): String {
+        return "DefinedFn($doc $fns)"
+    }
+}
 
 /**
  * Represents an S-expression.
@@ -250,7 +274,9 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
             if (params.contains("&")) {
                 if (params.indexOf("&") + 1 != params.size - 1) error("& must be followed by one other argument")
 
-                return@map -(params.size - 1) to AnonymousFn(params, listOf(body))
+                val updatedParams = Arr(*params.take(params.size - 2).toTypedArray(), params[params.size - 1])
+
+                return@map -(params.size - 1) to AnonymousFn(updatedParams, listOf(body))
             }
 
             return@map params.size to AnonymousFn(params, listOf(body))
@@ -265,19 +291,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
         return when (val ref = scope.getReference(identifier as String)) {
             is Fn -> ref.invoke(Scope(scope))
             is AnonymousFn -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
-            is DefinedFn -> {
-                if (ref.fns.containsKey(args.size)) {
-                    return ref.fns[args.size]!!.invoke(args, Scope(scope))
-                } else if (ref.fns.any { it.key < 0 }) {
-                    val (paramCount, value) = ref.fns.entries.firstOrNull { it.key < 0 }!!
-
-                    if (args.size > -paramCount) error("Expected at least ${-paramCount} arguments, got ${args.size}")
-
-                    return value.invoke(args, Scope(scope))
-                } else {
-                    error("No function $identifier with arity ${args.size}")
-                }
-            }
+            is DefinedFn -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
             else -> null
         }
     }
@@ -344,6 +358,10 @@ data class Arr(val values: List<Any?>) {
 
     fun joinToString(separator: String): String {
         return values.joinToString(separator)
+    }
+
+    fun toTypedArray(): Array<Any?> {
+        return values.toTypedArray()
     }
 
     override fun toString(): String {

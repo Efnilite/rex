@@ -137,7 +137,7 @@ object ParserTest {
         }
 
         parse(tokenize("(defn + 'adds things.' [] 0 [x] x [x y] (dev.efnilite.rex.RT/add x y) " +
-                "[x y & more] (dev.efnilite.rex.RT/reduce + (+ x y) more)) (+) (+ 1) (+ 2 1) (+ 2 1 4)")).let {
+                "[x y & more] (dev.efnilite.rex.RT/reduce + (+ x y) more)) (+) (+ 1) (+ 2 1) (+ 2 1 4 5)")).let {
             it as List<*>
 
             assertEquals("+", it[0])
