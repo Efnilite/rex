@@ -1,12 +1,29 @@
-import dev.efnilite.rex.Arr
-import dev.efnilite.rex.AnonymousFn
-import dev.efnilite.rex.Fn
-import dev.efnilite.rex.RT
+import dev.efnilite.rex.*
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 object RTTest {
+
+    @Test
+    fun testIss() {
+        // TODO
+    }
+
+    @Test
+    fun testIff() {
+        // TODO
+    }
+
+    @Test
+    fun testCount() {
+        // TODO
+    }
+
+    @Test
+    fun testGet() {
+        // TODO
+    }
 
     @Test
     fun testDrop() {
@@ -32,7 +49,13 @@ object RTTest {
 
     @Test
     fun testReduce() {
-        assertEquals(6, RT.reduce(AnonymousFn(Arr("a", "b"), listOf(Fn("dev.efnilite.rex.RT/add", listOf("a", "b")))), 0, Arr(1, 2, 3)))
+        val fn = AnonymousFn(Arr("a", "b"), listOf(Fn("dev.efnilite.rex.RT/add", listOf("a", "b"))))
+
+        assertFails { RT.reduce(1, 0, Arr(1, 2, 3)) }
+        assertFails { RT.reduce(fn, 0, null) }
+        assertFails { RT.reduce(fn, 0, Mp()) }
+
+        assertEquals(6, RT.reduce(fn, 0, Arr(1, 2, 3)))
     }
 
     @Test
