@@ -1,5 +1,5 @@
-import dev.efnilite.rex.Arr
 import dev.efnilite.rex.AnonymousFn
+import dev.efnilite.rex.Arr
 import dev.efnilite.rex.Mp
 import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Tokenizer.Companion.tokenize
@@ -23,6 +23,9 @@ object ParserTest {
 
     @Test
     fun testDefinedFnAsIdentifier() {
+        assertEquals(5, parse(tokenize("((fn [x] x) 5)")))
+        assertEquals(Arr(5), parse(tokenize("((fn [x] [x]) 5)")))
+
         assertEquals(3, parse(tokenize("((fn [x] 3) 5)")))
         assertEquals(3, parse(tokenize("((fn [x y] 3) 5 6)")))
         assertEquals(3, parse(tokenize("((fn [x y] (dev.efnilite.rex.RT/add x y)) 1 2)")))
@@ -69,13 +72,20 @@ object ParserTest {
 
     @Test
     fun testArray() {
-        val result = parse(tokenize("[2 3 4]"))
+        parse(tokenize("[2 3 4]")).let {
+            it as Arr
 
-        result as Arr
+            assertEquals(2, it[0])
+            assertEquals(3, it[1])
+            assertEquals(4, it[2])
+        }
 
-        assertEquals(2, result[0])
-        assertEquals(3, result[1])
-        assertEquals(4, result[2])
+        parse(tokenize("(var x 1) [x 0]")).let {
+            it as List<*>
+
+            assertEquals("x", it[0])
+            assertEquals(Arr(1, 0), it[1])
+        }
     }
 
     @Test
@@ -88,12 +98,18 @@ object ParserTest {
             assertEquals(3, it[2])
             assertIs<AnonymousFn>(it["balls"])
         }
+
+        parse(tokenize("(var x 1) {x 0 0 x}")).let {
+            it as List<*>
+
+            assertEquals("x", it[0])
+            assertEquals(Mp("x" to 0, 0 to 1), it[1])
+        }
     }
 
     @Test
     fun testFn() {
         assertFails { parse(tokenize("(2 3 4)")) }
-
 
         parse(tokenize("(var x 3) (var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 2 1)")).let {
             it as List<*>
@@ -111,6 +127,11 @@ object ParserTest {
             assertEquals("+", it[0])
             assertEquals(10, it[1])
         }
+    }
+
+    @Test
+    fun testVarargs() {
+        println(parse(tokenize("((fn [x y] [x y]) 1 2)")))
     }
 
     @Test
@@ -137,14 +158,15 @@ object ParserTest {
         }
 
         parse(tokenize("(defn + 'adds things.' [] 0 [x] x [x y] (dev.efnilite.rex.RT/add x y) " +
-                "[x y & more] (dev.efnilite.rex.RT/reduce + (+ x y) more)) (+) (+ 1) (+ 2 1) (+ 2 1 4 5)")).let {
+                "[x y & more] (dev.efnilite.rex.RT/reduce + (+ x y) more)) (+) (+ 1) (+ 2 1) (+ 2 1 4) (+ 2 1 4 5 6)")).let {
             it as List<*>
 
             assertEquals("+", it[0])
             assertEquals(0, it[1])
             assertEquals(1, it[2])
             assertEquals(3, it[3])
-            assertEquals(7, it[3])
+            assertEquals(7, it[4])
+            assertEquals(18, it[5])
         }
     }
 }

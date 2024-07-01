@@ -64,13 +64,7 @@ object Parser {
     }
 
     private fun parseArr(arr: ArrToken): Arr {
-        val list = mutableListOf<Any?>()
-
-        for (token in arr.tokens) {
-            list += parse(token)
-        }
-
-        return Arr(list)
+        return Arr(arr.tokens.map { parse(it) })
     }
 }
 
@@ -78,18 +72,36 @@ class Scope(private val parent: Scope? = null) {
 
     private val refs = mutableMapOf<String, Any?>()
 
-    fun setReference(name: String, value: Any?) {
-        refs[name] = value
+    /**
+     * Sets a reference in the scope.
+     *
+     * @param ref The reference.
+     * @param value The value of the reference.
+     */
+    fun setReference(ref: String, value: Any?) {
+        refs[ref] = value
     }
 
-    fun getReference(name: String): Any? {
-        if (refs.containsKey(name)) {
-            return refs[name]
+    /**
+     * Resolves a reference in the scope.
+     * If the reference is not found in the current scope, it will look in the parent scopes recursively.
+     *
+     * @param ref The reference.
+     * @return The value of the reference, or null if not found.
+     */
+    fun getReference(ref: String): Any? {
+        if (refs.containsKey(ref)) {
+            return refs[ref]
         }
 
-        return parent?.getReference(name)
+        return parent?.getReference(ref)
     }
 
+    /**
+     * Returns the root scope of the current scope.
+     *
+     * @return The root scope.
+     */
     fun getRootScope(): Scope {
         var scope = this
 
@@ -107,6 +119,17 @@ class Scope(private val parent: Scope? = null) {
     }
 }
 
+interface Invocable {
+
+    /**
+     * Replaces the params with the provided arguments in the scope and evaluates the body.
+     *
+     * @param args The arguments to replace the params with.
+     * @param scope The scope to evaluate the body in. Contains the parent scope.
+     */
+    fun invoke(args: List<Any?>, scope: Scope): Any?
+}
+
 /**
  * Represents an anonymous function.
  *
@@ -116,13 +139,23 @@ class Scope(private val parent: Scope? = null) {
  * @param params An array with the params of the fn.
  * @param body The expressions in the fn that act as the body.
  * @constructor Creates an anonymous function with the provided parameters and body.
- * TODO vararg params
- * TODO interface with DefinedFn
  */
 class AnonymousFn(
     private val params: Arr,
-    private val body: List<Any?>
-) {
+    private val body: List<Any?>,
+) : Invocable {
+
+    private val varargs: Boolean
+
+    init {
+        if (params.contains("&")) {
+            if (params.indexOf("&") + 1 != params.size - 1) error("& must be followed by one other argument")
+
+            varargs = true
+        } else {
+            varargs = false
+        }
+    }
 
     /**
      * Invokes this anonymous function with the provided arguments.
@@ -135,17 +168,28 @@ class AnonymousFn(
      * @throws IllegalArgumentException If the number of arguments does not match the number of params.
      * @throws IllegalArgumentException If a param is not a string.
      */
-    fun invoke(args: List<Any?>, scope: Scope): Any? {
-        if (params.size != args.size) {
-            error("Expected ${params.size} arguments, got ${args.size}")
+    override fun invoke(args: List<Any?>, scope: Scope): Any? {
+        if (varargs) {
+            if (params.size - 1 > args.size) {
+                error("Expected at least ${params.size - 1} arguments, got ${args.size}")
+            }
+        } else {
+            if (params.size != args.size) {
+                error("Expected ${params.size} arguments, got ${args.size}")
+            }
         }
 
         for ((idx, arg) in args.withIndex()) {
+            if (varargs && params[idx] == "&") {
+                scope.setReference(params[idx + 1] as String, Arr(args.drop(idx)))
+                break
+            }
+
             if (params[idx] !is String) {
                 error("Expected a string, got ${params[idx]}")
             }
 
-            scope.setReference(params[idx] as String, arg)
+            scope.setReference(params[idx] as String, if (arg is Fn) arg.invoke(scope) else arg)
         }
 
         var result: Any? = null
@@ -161,7 +205,7 @@ class AnonymousFn(
     }
 
     override fun toString(): String {
-        return "AnonymousFn(${params.joinToString(" ")} $body)"
+        return "AnonymousFn(${if (varargs) "varargs " else ""}${params.joinToString(" ")} $body)"
     }
 }
 
@@ -173,16 +217,13 @@ class AnonymousFn(
  * The key is the arity of the function.
  * `-arity` should be used for variadic functions.
  */
-data class DefinedFn(val doc: String = "", val fns: Map<Int, AnonymousFn>) {
+data class DefinedFn(val doc: String = "", val fns: Map<Int, AnonymousFn>) : Invocable {
 
-    fun invoke(args: List<Any?>, scope: Scope): Any? {
+    override fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (fns.containsKey(args.size)) {
             return fns[args.size]!!.invoke(args, scope)
         } else if (fns.any { it.key < 0 }) {
             val (paramCount, value) = fns.entries.firstOrNull { it.key < 0 }!!
-
-            println(paramCount)
-            println(value)
 
             if (args.size < -paramCount) error("Expected at least ${-paramCount} arguments, got ${args.size}")
 
@@ -227,7 +268,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
             is AnonymousFn -> identifier.invoke(args, Scope(scope))
             is String -> {
                 when {
-                    identifier.contains(".") && identifier.contains("/") -> invokeReference(scope)
+                    identifier.contains(".") && identifier.contains("/") -> invokeJVMReference(scope)
                     identifier == "var" -> invokeVar(scope)
                     identifier == "defn" -> invokeDefn(scope)
                     else -> invokeElse(scope)
@@ -238,7 +279,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
         }
     }
 
-    private fun invokeReference(scope: Scope): Any? {
+    private fun invokeJVMReference(scope: Scope): Any? {
         val (className, methodName) = (identifier as String).split("/")
 
         val obj = Class.forName(className).kotlin.objectInstance!!
@@ -251,20 +292,17 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     }
 
     private fun invokeVar(scope: Scope): String {
-        if (args.size != 2) {
-            error("Expected 2 arguments, got ${args.size}")
-        }
+        if (args.size != 2) error("Expected 2 arguments, got ${args.size}")
 
-        val name = args[0] as String
-        val value = args[1]
+        val ref = args[0] as String
 
-        scope.setReference(name, value)
+        scope.setReference(ref, args[1])
 
-        return name
+        return ref
     }
 
     private fun invokeDefn(scope: Scope): String {
-        val name = args[0] as String
+        val ref = args[0] as String
         val hasDoc = args[1] is String
         val pairs = args.drop(if (hasDoc) 2 else 1).chunked(2) // skip doc
 
@@ -272,26 +310,20 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
             if (params !is Arr) error("Invalid function definition")
 
             if (params.contains("&")) {
-                if (params.indexOf("&") + 1 != params.size - 1) error("& must be followed by one other argument")
-
-                val updatedParams = Arr(*params.take(params.size - 2).toTypedArray(), params[params.size - 1])
-
-                return@map -(params.size - 1) to AnonymousFn(updatedParams, listOf(body))
+                return@map -(params.size - 1) to AnonymousFn(params, listOf(body))
             }
-
             return@map params.size to AnonymousFn(params, listOf(body))
         }.toMap()
 
-        scope.getRootScope().setReference(name, DefinedFn(if (hasDoc) args[1] as String else "", fns))
+        scope.getRootScope().setReference(ref, DefinedFn(if (hasDoc) args[1] as String else "", fns))
 
-        return name
+        return ref
     }
 
     private fun invokeElse(scope: Scope): Any? {
         return when (val ref = scope.getReference(identifier as String)) {
             is Fn -> ref.invoke(Scope(scope))
-            is AnonymousFn -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
-            is DefinedFn -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
+            is Invocable -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
             else -> null
         }
     }

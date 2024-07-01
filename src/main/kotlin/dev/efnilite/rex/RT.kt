@@ -53,17 +53,12 @@ object RT {
     }
 
     fun reduce(fn: Any?, initial: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
-        println(coll)
         if (coll !is Arr) error("Invalid collection")
 
         var acc = initial
 
         for (element in coll) {
-            acc = when (fn) {
-                is DefinedFn -> fn.invoke(listOf(acc, element), scope)
-                is AnonymousFn -> fn.invoke(listOf(acc, element), scope)
-                else -> error("Invalid function")
-            }
+            acc = if (fn is Invocable) fn.invoke(listOf(acc, element), scope) else error("Invalid function")
         }
 
         return acc
