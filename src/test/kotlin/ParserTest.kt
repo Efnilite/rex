@@ -1,5 +1,6 @@
 import dev.efnilite.rex.AnonymousFn
 import dev.efnilite.rex.Arr
+import dev.efnilite.rex.Identifier
 import dev.efnilite.rex.Mp
 import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Tokenizer.Companion.tokenize
@@ -33,31 +34,38 @@ object ParserTest {
         parse(tokenize("(var x 5) ((fn [x] (dev.efnilite.rex.RT/add x x)) 2)")).let {
             it as List<*>
 
-            assertEquals("x", it[0])
+            assertEquals(Identifier("x"), it[0])
             assertEquals(4, it[1])
         }
 
         parse(tokenize("(var x 2) ((fn [x'] (dev.efnilite.rex.RT/add x x')) 1)")).let {
             it as List<*>
 
-            assertEquals("x", it[0])
+            assertEquals(Identifier("x"), it[0])
             assertEquals(3, it[1])
         }
     }
 
     @Test
     fun testVar() {
+        parse(tokenize("(var x 3) x")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(3, it[1])
+        }
+
         parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 1 2)")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(3, it[1])
         }
 
         parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) ((fn [x y] (+ x y)) 1 2)")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(3, it[1])
         }
 
@@ -83,7 +91,7 @@ object ParserTest {
         parse(tokenize("(var x 1) [x 0]")).let {
             it as List<*>
 
-            assertEquals("x", it[0])
+            assertEquals(Identifier("x"), it[0])
             assertEquals(Arr(1, 0), it[1])
         }
     }
@@ -99,23 +107,31 @@ object ParserTest {
             assertIs<AnonymousFn>(it["balls"])
         }
 
-        parse(tokenize("(var x 1) {x 0 0 x}")).let {
+        parse(tokenize("(var x 1) {'x' 0 0 x}")).let {
             it as List<*>
 
-            assertEquals("x", it[0])
+            assertEquals(Identifier("x"), it[0])
             assertEquals(Mp("x" to 0, 0 to 1), it[1])
         }
     }
 
     @Test
     fun testFn() {
+        parse(tokenize("(var x 1) (var y (fn [] x)) (y)")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(Identifier("y"), it[1])
+            assertEquals(1, it[2])
+        }
+
         assertFails { parse(tokenize("(2 3 4)")) }
 
         parse(tokenize("(var x 3) (var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (+ 2 1)")).let {
             it as List<*>
 
-            assertEquals("x", it[0])
-            assertEquals("+", it[1])
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(Identifier("+"), it[1])
             assertEquals(3, it[2])
         }
 
@@ -124,7 +140,7 @@ object ParserTest {
         parse(tokenize("(var + (fn [x y] (dev.efnilite.rex.RT/add x y))) (dev.efnilite.rex.RT/reduce + 0 [1 2 3 4])")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(10, it[1])
         }
     }
@@ -139,21 +155,21 @@ object ParserTest {
         parse(tokenize("(defn + 'adds things.' [] 0) (+)")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(0, it[1])
         }
 
         parse(tokenize("(defn + 'adds things.' [x] x) (+ 1)")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(1, it[1])
         }
 
         parse(tokenize("(defn + 'adds things.' [x y] (dev.efnilite.rex.RT/add x y)) (+ 1 2)")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(3, it[1])
         }
 
@@ -161,7 +177,7 @@ object ParserTest {
                 "[x y & more] (dev.efnilite.rex.RT/reduce + (+ x y) more)) (+) (+ 1) (+ 2 1) (+ 2 1 4) (+ 2 1 4 5 6)")).let {
             it as List<*>
 
-            assertEquals("+", it[0])
+            assertEquals(Identifier("+"), it[0])
             assertEquals(0, it[1])
             assertEquals(1, it[2])
             assertEquals(3, it[3])

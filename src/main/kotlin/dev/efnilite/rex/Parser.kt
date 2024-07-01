@@ -17,10 +17,10 @@ object Parser {
         for (token in tokens) {
             val parsed = parse(token)
 
-            list += if (parsed is Fn) {
-                parsed.invoke(scope)
-            } else {
-                parsed
+            list += when (parsed) {
+                is Fn -> parsed.invoke(scope)
+                is Identifier -> scope.getReference(parsed)
+                else -> parsed
             }
         }
 
@@ -33,6 +33,7 @@ object Parser {
             is FnToken -> parseFn(token)
             is MapToken -> parseMap(token)
             is ArrToken -> parseArr(token)
+            is IdentifierToken -> Identifier(token.value)
             is Literal<*> -> token.value
             else -> error("Invalid token")
         }
@@ -78,8 +79,8 @@ class Scope(private val parent: Scope? = null) {
      * @param ref The reference.
      * @param value The value of the reference.
      */
-    fun setReference(ref: String, value: Any?) {
-        refs[ref] = value
+    fun setReference(ref: Identifier, value: Any?) {
+        refs[ref.value] = value
     }
 
     /**
@@ -89,9 +90,9 @@ class Scope(private val parent: Scope? = null) {
      * @param ref The reference.
      * @return The value of the reference, or null if not found.
      */
-    fun getReference(ref: String): Any? {
-        if (refs.containsKey(ref)) {
-            return refs[ref]
+    fun getReference(ref: Identifier): Any? {
+        if (refs.containsKey(ref.value)) {
+            return refs[ref.value]
         }
 
         return parent?.getReference(ref)
@@ -181,22 +182,22 @@ class AnonymousFn(
 
         for ((idx, arg) in args.withIndex()) {
             if (varargs && params[idx] == "&") {
-                scope.setReference(params[idx + 1] as String, Arr(args.drop(idx)))
+                scope.setReference(params[idx + 1] as Identifier, Arr(args.drop(idx)))
                 break
             }
 
-            if (params[idx] !is String) {
+            if (params[idx] !is Identifier) {
                 error("Expected a string, got ${params[idx]}")
             }
 
-            scope.setReference(params[idx] as String, if (arg is Fn) arg.invoke(scope) else arg)
+            scope.setReference(params[idx] as Identifier, if (arg is Fn) arg.invoke(scope) else arg)
         }
 
         var result: Any? = null
         for (any in body) {
             result = when (any) {
                 is Fn -> any.invoke(scope)
-                is String -> scope.getReference(any) ?: any
+                is Identifier -> scope.getReference(any)
                 else -> any
             }
         }
@@ -266,11 +267,11 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
         return when (identifier) {
             is Fn -> identifier.invoke(Scope(scope))
             is AnonymousFn -> identifier.invoke(args, Scope(scope))
-            is String -> {
-                when {
-                    identifier.contains(".") && identifier.contains("/") -> invokeJVMReference(scope)
-                    identifier == "var" -> invokeVar(scope)
-                    identifier == "defn" -> invokeDefn(scope)
+            is Identifier -> {
+                return when {
+                    identifier.value.contains(".") && identifier.value.contains("/") -> invokeJVMReference(scope)
+                    identifier.value == "var" -> invokeVar(scope)
+                    identifier.value == "defn" -> invokeDefn(scope)
                     else -> invokeElse(scope)
                 }
             }
@@ -280,29 +281,29 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     }
 
     private fun invokeJVMReference(scope: Scope): Any? {
-        val (className, methodName) = (identifier as String).split("/")
+        val (className, methodName) = (identifier as Identifier).value.split("/")
 
         val obj = Class.forName(className).kotlin.objectInstance!!
         val functions = obj.javaClass.kotlin.memberFunctions
         val method = functions.find { it.name == methodName }!!
 
-        val translated = args.map { if (it is String) scope.getReference(it) else it }
+        val translated = args.map { if (it is Identifier) scope.getReference(it) else it }
 
         return method.call(RT, *translated.toTypedArray(), scope)
     }
 
-    private fun invokeVar(scope: Scope): String {
+    private fun invokeVar(scope: Scope): Identifier {
         if (args.size != 2) error("Expected 2 arguments, got ${args.size}")
 
-        val ref = args[0] as String
+        val ref = args[0] as Identifier
 
         scope.setReference(ref, args[1])
 
         return ref
     }
 
-    private fun invokeDefn(scope: Scope): String {
-        val ref = args[0] as String
+    private fun invokeDefn(scope: Scope): Identifier {
+        val ref = args[0] as Identifier
         val hasDoc = args[1] is String
         val pairs = args.drop(if (hasDoc) 2 else 1).chunked(2) // skip doc
 
@@ -321,9 +322,9 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     }
 
     private fun invokeElse(scope: Scope): Any? {
-        return when (val ref = scope.getReference(identifier as String)) {
+        return when (val ref = scope.getReference(identifier as Identifier)) {
             is Fn -> ref.invoke(Scope(scope))
-            is Invocable -> ref.invoke(args.map { if (it is String) scope.getReference(it) else it }, Scope(scope))
+            is Invocable -> ref.invoke(args.map { if (it is Identifier) scope.getReference(it) else it }, Scope(scope))
             else -> null
         }
     }
@@ -331,6 +332,15 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     override fun toString(): String {
         return "Fn($identifier ${args.joinToString(" ")})"
     }
+}
+
+/**
+ * Represents an identifier.
+ *
+ * @param value The value of the identifier.
+ */
+data class Identifier(val value: String) {
+    override fun toString() = ">$value"
 }
 
 /**
@@ -390,10 +400,6 @@ data class Arr(val values: List<Any?>) {
 
     fun joinToString(separator: String): String {
         return values.joinToString(separator)
-    }
-
-    fun toTypedArray(): Array<Any?> {
-        return values.toTypedArray()
     }
 
     override fun toString(): String {
