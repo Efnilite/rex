@@ -25,7 +25,12 @@ object ParserTest {
     @Test
     fun testDefinedFnAsIdentifier() {
         assertEquals(5, parse(tokenize("((fn [x] x) 5)")))
+
         assertEquals(Arr(5), parse(tokenize("((fn [x] [x]) 5)")))
+        assertEquals(Arr(5, Arr(5)), parse(tokenize("((fn [x] [x [x]]) 5)")))
+
+        assertEquals(Mp(0 to 1), parse(tokenize("((fn [x] {0 x}) 1)")))
+        assertEquals(Mp(0 to Mp(0 to 1)), parse(tokenize("((fn [x] {0 {0 x}}) 1)")))
 
         assertEquals(3, parse(tokenize("((fn [x] 3) 5)")))
         assertEquals(3, parse(tokenize("((fn [x y] 3) 5 6)")))
@@ -94,6 +99,13 @@ object ParserTest {
             assertEquals(Identifier("x"), it[0])
             assertEquals(Arr(1, 0), it[1])
         }
+
+        parse(tokenize("(var x 1) [x [x]]")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(Arr(1, Arr(1)), it[1])
+        }
     }
 
     @Test
@@ -112,6 +124,13 @@ object ParserTest {
 
             assertEquals(Identifier("x"), it[0])
             assertEquals(Mp("x" to 0, 0 to 1), it[1])
+        }
+
+        parse(tokenize("(var x 1) {'x' 0 0 {0 x}}")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(Mp("x" to 0, 0 to Mp(0 to 1)), it[1])
         }
     }
 

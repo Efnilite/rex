@@ -19,6 +19,7 @@ object Parser {
 
             list += when (parsed) {
                 is Fn -> parsed.invoke(scope)
+                is Recursable -> parsed.resolve(scope)
                 is Identifier -> scope.getReference(parsed)
                 else -> parsed
             }
@@ -149,8 +150,8 @@ class AnonymousFn(
     private val varargs: Boolean
 
     init {
-        if (params.contains("&")) {
-            if (params.indexOf("&") + 1 != params.size - 1) error("& must be followed by one other argument")
+        if (params.contains(Identifier("&"))) {
+            if (params.indexOf(Identifier("&")) + 1 != params.size - 1) error("& must be followed by one other argument")
 
             varargs = true
         } else {
@@ -181,7 +182,7 @@ class AnonymousFn(
         }
 
         for ((idx, arg) in args.withIndex()) {
-            if (varargs && params[idx] == "&") {
+            if (varargs && params[idx] == Identifier("&")) {
                 scope.setReference(params[idx + 1] as Identifier, Arr(args.drop(idx)))
                 break
             }
@@ -197,6 +198,7 @@ class AnonymousFn(
         for (any in body) {
             result = when (any) {
                 is Fn -> any.invoke(scope)
+                is Recursable -> any.resolve(scope)
                 is Identifier -> scope.getReference(any)
                 else -> any
             }
@@ -310,7 +312,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
         val fns = pairs.map { (params, body) ->
             if (params !is Arr) error("Invalid function definition")
 
-            if (params.contains("&")) {
+            if (params.contains(Identifier("&"))) {
                 return@map -(params.size - 1) to AnonymousFn(params, listOf(body))
             }
             return@map params.size to AnonymousFn(params, listOf(body))
@@ -344,16 +346,39 @@ data class Identifier(val value: String) {
 }
 
 /**
+ * Represents a non-function collection that may contain an instance of itself.
+ */
+interface Recursable {
+
+    fun resolve(scope: Scope): Recursable
+
+}
+
+/**
  * Represents a map.
  *
  * @param elements The elements of the map.
  * @constructor Creates a map with the provided elements.
  */
-data class Mp(val elements: Map<Any?, Any?>) {
+data class Mp(val elements: Map<Any?, Any?>) : Recursable {
 
     constructor(vararg elements: Pair<Any?, Any?>) : this(elements.toMap())
 
     val size get() = elements.size
+
+    override fun resolve(scope: Scope): Mp {
+        val resolved = mutableMapOf<Any?, Any?>()
+
+        for ((key, value) in elements) {
+            resolved[key] = when (value) {
+                is Identifier -> scope.getReference(value)
+                is Recursable -> value.resolve(scope)
+                else -> value
+            }
+        }
+
+        return Mp(resolved)
+    }
 
     operator fun get(key: Any?): Any? {
         return elements[key]
@@ -372,11 +397,21 @@ data class Mp(val elements: Map<Any?, Any?>) {
  * @param values The values of the array.
  * @constructor Creates an array with the provided values.
  */
-data class Arr(val values: List<Any?>) {
+data class Arr(val values: List<Any?>) : Recursable {
 
     constructor(vararg values: Any?) : this(values.toList())
 
     val size get() = values.size
+
+    override fun resolve(scope: Scope): Recursable {
+        return Arr(values.map {
+            when (it) {
+                is Identifier -> scope.getReference(it)
+                is Recursable -> it.resolve(scope)
+                else -> it
+            }
+        })
+    }
 
     fun drop(n: Int): Arr {
         return Arr(values.drop(n))
