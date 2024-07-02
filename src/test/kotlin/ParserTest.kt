@@ -1,4 +1,4 @@
-import dev.efnilite.rex.AnonymousFn
+import dev.efnilite.rex.AFn
 import dev.efnilite.rex.Arr
 import dev.efnilite.rex.Identifier
 import dev.efnilite.rex.Mp
@@ -116,7 +116,7 @@ object ParserTest {
             it as Mp
 
             assertEquals(3, it[2])
-            assertIs<AnonymousFn>(it["balls"])
+            assertIs<AFn>(it["balls"])
         }
 
         parse(tokenize("(var x 1) {'x' 0 0 x}")).let {

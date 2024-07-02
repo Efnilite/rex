@@ -45,7 +45,7 @@ object Parser {
         val identifier = tokens[0]
 
         return if (identifier is IdentifierToken && identifier.value == "fn") {
-            AnonymousFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
         } else {
             Fn(parse(identifier), tokens.drop(1).map { parse(it) })
         }
@@ -142,7 +142,7 @@ interface Invocable {
  * @param body The expressions in the fn that act as the body.
  * @constructor Creates an anonymous function with the provided parameters and body.
  */
-class AnonymousFn(
+class AFn(
     private val params: Arr,
     private val body: List<Any?>,
 ) : Invocable {
@@ -188,7 +188,7 @@ class AnonymousFn(
             }
 
             if (params[idx] !is Identifier) {
-                error("Expected a string, got ${params[idx]}")
+                error("Expected an identifier, got ${params[idx]!!::class.simpleName} with value ${params[idx]}")
             }
 
             scope.setReference(params[idx] as Identifier, if (arg is Fn) arg.invoke(scope) else arg)
@@ -208,7 +208,7 @@ class AnonymousFn(
     }
 
     override fun toString(): String {
-        return "AnonymousFn(${if (varargs) "varargs " else ""}${params.joinToString(" ")} $body)"
+        return "AFn(${if (varargs) "varargs " else ""}${params.joinToString(" ")} $body)"
     }
 }
 
@@ -220,7 +220,7 @@ class AnonymousFn(
  * The key is the arity of the function.
  * `-arity` should be used for variadic functions.
  */
-data class DefinedFn(val doc: String = "", val fns: Map<Int, AnonymousFn>) : Invocable {
+data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : Invocable {
 
     override fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (fns.containsKey(args.size)) {
@@ -268,7 +268,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     fun invoke(scope: Scope): Any? {
         return when (identifier) {
             is Fn -> identifier.invoke(Scope(scope))
-            is AnonymousFn -> identifier.invoke(args, Scope(scope))
+            is AFn -> identifier.invoke(args, Scope(scope))
             is Identifier -> {
                 return when {
                     identifier.value.contains(".") && identifier.value.contains("/") -> invokeJVMReference(scope)
@@ -313,9 +313,9 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
             if (params !is Arr) error("Invalid function definition")
 
             if (params.contains(Identifier("&"))) {
-                return@map -(params.size - 1) to AnonymousFn(params, listOf(body))
+                return@map -(params.size - 1) to AFn(params, listOf(body))
             }
-            return@map params.size to AnonymousFn(params, listOf(body))
+            return@map params.size to AFn(params, listOf(body))
         }.toMap()
 
         scope.getRootScope().setReference(ref, DefinedFn(if (hasDoc) args[1] as String else "", fns))
