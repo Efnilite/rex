@@ -83,14 +83,14 @@ object TokenizerTest {
     @Test
     @Timeout(1)
     fun testString() {
-        assertFails { tokenize("'hello") }
+        assertFails { tokenize("\"hello") }
 
-        tokenize("'\"hey there, how\\'s it going?\", he said. \\''").let {
+        tokenize("\"hey there, how\\'s it going?', he said. \''\"").let {
             assertEquals(1, it.size)
-            assertLiteral("\"hey there, how's it going?\", he said. '", StringToken::class, it[0])
+            assertLiteral("hey there, how's it going?\', he said. ''", StringToken::class, it[0])
         }
 
-        tokenize("['hello' {'xx' 'there'}]").let {
+        tokenize("[\"hello\" {\"xx\" \"there\"}]").let {
             assertEquals(1, it.size)
             assert(it[0] is ArrToken)
             val arrToken = it[0] as ArrToken
@@ -143,7 +143,7 @@ object TokenizerTest {
     @Test
     @Timeout(1)
     fun testArr() {
-        val tokens = tokenize("3 [-.21 'hey there' [true [(fn [x] x) '[rar]']] false]")
+        val tokens = tokenize("3 [-.21 \"hey there\" [true [(fn [x] x) \"[rar]\"]] false]")
 
         assertEquals(2, tokens.size)
         assertLiteral(3, IntToken::class, tokens[0])
@@ -189,7 +189,7 @@ object TokenizerTest {
     @Test
     @Timeout(1)
     fun testNonNestedFunction() {
-        val tokens = tokenize("'sup' .23 (map some 1 -2.01 true 'hello there!' ['a' 1]) false")
+        val tokens = tokenize("\"sup\" .23 (map some 1 -2.01 true \"hello there!\" [\"a\" 1]) false")
 
         assertEquals(4, tokens.size)
         assertLiteral("sup", StringToken::class, tokens[0])
@@ -274,7 +274,7 @@ object TokenizerTest {
     @Test
     @Timeout(1)
     fun testMap() {
-        val tokens = tokenize("2.3 {is-cheese? '{no way}' {test [1 2 (fn [x] x)]} false}")
+        val tokens = tokenize("2.3 {is-cheese? \"{no way}\" {test [1 2 (fn [x] x)]} false}")
 
         assertEquals(2, tokens.size)
         assertLiteral(2.3, DoubleToken::class, tokens[0])
@@ -343,9 +343,9 @@ object TokenizerTest {
         assertFails { tokenize("]") }
         assertFails { tokenize("}") }
         assertFails { tokenize("\\") }
-        assertFails { tokenize("'") }
+        assertFails { tokenize("\"") }
 
-        assertFails { tokenize("'(]") }
+        assertFails { tokenize("\"(]") }
         assertFails { tokenize("{[{(fn [x] x} true ]}") }
         assertFails { tokenize("{ } true }") }
     }
@@ -353,7 +353,7 @@ object TokenizerTest {
     @Test
     @Timeout(1)
     fun testCommas() {
-        val tokens = tokenize("1, 2.0, , 'hey, partner' 4")
+        val tokens = tokenize("1, 2.0, , \"hey, partner\" 4")
 
         assertEquals(4, tokens.size)
         assertLiteral(1, IntToken::class, tokens[0])

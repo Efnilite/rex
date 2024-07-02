@@ -70,7 +70,7 @@ class Tokenizer(string: String) {
                     next()
                     continue
                 }
-                isString && char != '\'' -> {
+                isString && char != '\"' -> {
                     token += char
                     next()
                     continue
@@ -103,7 +103,7 @@ class Tokenizer(string: String) {
                     next()
                 }
 
-                '\'' -> {
+                '\"' -> {
                     if (isString) {
                         tokens += StringToken(token)
                         isString = false
@@ -154,7 +154,7 @@ class Tokenizer(string: String) {
 
     private fun checkLegality(char: Char) {
         when (char) {
-            '\\', ')', ']', '}', '#', '\'' -> {
+            '\\', ')', ']', '}', '#', '\"' -> {
                 error("Illegal identifier")
             }
         }
