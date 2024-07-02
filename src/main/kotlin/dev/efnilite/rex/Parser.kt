@@ -10,16 +10,11 @@ object Parser {
      * @param tokens The tokens to parse.
      * @return The parsed list of objects.
      */
-    fun parse(tokens: List<Token>): Any? {
-        val scope = Scope(null)
-        val list = mutableListOf<Any?>()
-
-        for (token in tokens) {
-            list += invokeAny(parse(token), scope)
-        }
+    fun parse(tokens: List<Token>, scope: Scope = Scope(null)): Any? {
+        val parsed = tokens.map { invokeAny(parse(it), scope) }
 
         // avoids returning ["hey"] instead of "hey" when single element is parsed
-        return if (list.size == 1) list[0] else list
+        return if (parsed.size == 1) parsed[0] else parsed
     }
 
     private fun parse(token: Token): Any? {
@@ -332,7 +327,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
  * @param value The value of the identifier.
  */
 data class Identifier(val value: String) {
-    override fun toString() = ">$value"
+    override fun toString() = value
 }
 
 /**
