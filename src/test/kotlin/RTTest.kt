@@ -50,7 +50,7 @@ object RTTest {
     @Test
     fun testReduce() {
         val fn = AnonymousFn(Arr(Identifier("a"), Identifier("b")),
-            listOf(Fn("dev.efnilite.rex.RT/add", listOf(Identifier("a"), Identifier("b")))))
+            listOf(Fn(Identifier("dev.efnilite.rex.RT/add"), listOf(Identifier("a"), Identifier("b")))))
 
         assertFails { RT.reduce(1, 0, Arr(1, 2, 3)) }
         assertFails { RT.reduce(fn, 0, null) }
