@@ -8,7 +8,41 @@ package dev.efnilite.rex
 @Suppress("unused")
 object RT {
 
-    fun iss(x: Any?, cls: Any?): Boolean {
+    // TODO replace with rx impl
+    fun test(name: Any?, fns: Any?, scope: Scope = Scope(null)): Any {
+        if (name !is String) error("Invalid name")
+        if (fns !is Arr) error("Invalid fns")
+
+        for (fn in fns) {
+            if (fn !is Fn) error("Invalid fn")
+
+            if (fn.invoke(scope) != true) {
+                throw AssertionError("Test $name failed\n$fn returned false")
+            }
+        }
+
+        return true
+    }
+
+    fun throws(x: Any?, scope: Scope = Scope(null)): Boolean {
+        if (x !is AFn) error("Invalid fn")
+
+        try {
+            x.invoke(emptyList(), scope)
+        } catch (e: Exception) {
+            return true
+        }
+
+        return false
+    }
+
+    fun not(x: Any?, scope: Scope = Scope(null)): Boolean {
+        if (x !is Boolean) error("Invalid type")
+
+        return !x
+    }
+
+    fun iss(x: Any?, cls: Any?, scope: Scope = Scope(null)): Boolean {
         if (cls !is String) error("Invalid class type")
 
         return Class.forName(cls).isInstance(x)

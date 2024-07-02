@@ -1,0 +1,5 @@
+# Tests all functions that use 'is?'
+
+(test "str?"
+    (str? "hello")
+    (not (str? 1)))
