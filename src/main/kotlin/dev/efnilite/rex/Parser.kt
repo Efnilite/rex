@@ -15,14 +15,7 @@ object Parser {
         val list = mutableListOf<Any?>()
 
         for (token in tokens) {
-            val parsed = parse(token)
-
-            list += when (parsed) {
-                is Fn -> parsed.invoke(scope)
-                is Recursable -> parsed.resolve(scope)
-                is Identifier -> scope.getReference(parsed)
-                else -> parsed
-            }
+            list += invokeAny(parse(token), scope)
         }
 
         // avoids returning ["hey"] instead of "hey" when single element is parsed
@@ -147,6 +140,8 @@ class AFn(
     private val body: List<Any?>,
 ) : Invocable {
 
+    constructor(params: Arr, vararg body: Any?) : this(params, body.toList())
+
     private val varargs: Boolean
 
     init {
@@ -196,12 +191,7 @@ class AFn(
 
         var result: Any? = null
         for (any in body) {
-            result = when (any) {
-                is Fn -> any.invoke(scope)
-                is Recursable -> any.resolve(scope)
-                is Identifier -> scope.getReference(any)
-                else -> any
-            }
+            result = invokeAny(any, scope)
         }
 
         return result
@@ -313,9 +303,9 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
             if (params !is Arr) error("Invalid function definition")
 
             if (params.contains(Identifier("&"))) {
-                return@map -(params.size - 1) to AFn(params, listOf(body))
+                return@map -(params.size - 1) to AFn(params, body)
             }
-            return@map params.size to AFn(params, listOf(body))
+            return@map params.size to AFn(params, body)
         }.toMap()
 
         scope.getRootScope().setReference(ref, DefinedFn(if (hasDoc) args[1] as String else "", fns))
@@ -437,15 +427,24 @@ data class Arr(val values: List<Any?>) : Recursable {
         return values.joinToString(separator)
     }
 
-    override fun toString(): String {
-        return "[${values.joinToString(" ")}]"
-    }
-
     operator fun iterator(): Iterator<Any?> {
         return values.iterator()
+    }
+
+    override fun toString(): String {
+        return "[${values.joinToString(" ")}]"
     }
 }
 
 private fun error(message: String): Nothing {
     throw IllegalArgumentException(message)
+}
+
+private fun invokeAny(any: Any?, scope: Scope): Any? {
+    return when (any) {
+        is Fn -> any.invoke(scope)
+        is Recursable -> any.resolve(scope)
+        is Identifier -> scope.getReference(any)
+        else -> any
+    }
 }
