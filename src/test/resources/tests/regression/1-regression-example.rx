@@ -1,0 +1,6 @@
+# Regression test example.
+# The file should contain the PR number followed by a short description.
+# Test name should match the name of the file.
+
+(test "1-regression-example"
+    true)
