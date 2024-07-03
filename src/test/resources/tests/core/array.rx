@@ -1,0 +1,8 @@
+(test "array?"
+    (array? [1 2 3])
+    (array? [])
+
+    (not (array? 1))
+    (not (array? "hello"))
+    (not (array? (identity "hello")))
+    (not (array? (fn [] [true]))))

@@ -1,0 +1,7 @@
+(test "str?"
+    (str? "hello")
+    (str? (identity "hello"))
+
+    (not (str? 1))
+    (not (str? (identity 1)))
+    (not (str? (fn [] "hello"))))

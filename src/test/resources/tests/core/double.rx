@@ -1,0 +1,8 @@
+(test "double?"
+    (double? 4.235)
+
+    (not (double? 1058259824305968260))
+    (not (double? 1))
+    (not (double? "hello"))
+    (not (double? (identity "hello")))
+    (not (double? (fn [] 1.0))))

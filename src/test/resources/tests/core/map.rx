@@ -1,0 +1,8 @@
+(test "map?"
+    (map? {"a" 1 "b" 2})
+    (map? {})
+
+    (not (map? 1))
+    (not (map? "hello"))
+    (not (map? (identity "hello")))
+    (not (map? (fn [] {"a" 1}))))

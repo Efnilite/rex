@@ -1,0 +1,8 @@
+(test "long?"
+    (long? 1058259824305968260)
+
+    (not (long? 1))
+    (not (long? 4.235))
+    (not (long? "hello"))
+    (not (long? (identity "hello")))
+    (not (long? (fn [] 1058259824305968260))))

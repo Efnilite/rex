@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.net.URI
 
-object ResourcesTest {
+object FileTest {
 
     @Test
-    fun testResources() {
+    fun testFiles() {
         val core = this::class.java.getResourceAsStream("core.rx")!!
             .bufferedReader().use { it.readText() }
 
@@ -16,10 +16,16 @@ object ResourcesTest {
 
         parse(tokenize(core), scope)
 
+        println("Running file tests...")
         for (file in listResourceFiles()) {
             val content = file.readText()
-            parse(tokenize(content), scope)
-            println("Passed ${file.nameWithoutExtension}")
+            try {
+                parse(tokenize(content), scope)
+                println("Passed tests in ${file.nameWithoutExtension}")
+            } catch (e: Exception) {
+                println("Failed tests in ${file.nameWithoutExtension}")
+                throw e
+            }
         }
     }
 

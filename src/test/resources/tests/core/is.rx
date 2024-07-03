@@ -1,5 +1,5 @@
-# Tests all functions that use 'is?'
+(test "is?"
+    (is? "hello" "java.lang.String")
+    (is? 1058259824305968260 "java.lang.Number")
 
-(test "str?"
-    (str? "hello")
-    (not (str? 1)))
+    (not (is? 1 "java.lang.String")))

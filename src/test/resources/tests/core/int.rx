@@ -1,0 +1,8 @@
+(test "int?"
+    (int? 1)
+
+    (not (int? 1058259824305968260))
+    (not (int? 4.235))
+    (not (int? "hello"))
+    (not (int? (identity "hello")))
+    (not (int? (fn [] 1))))

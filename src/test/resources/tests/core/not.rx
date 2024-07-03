@@ -1,0 +1,5 @@
+(test "not"
+    (not false)
+    (not (not true))
+
+    (throws? (fn [] (not "hello"))))

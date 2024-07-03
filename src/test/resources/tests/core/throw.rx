@@ -1,0 +1,4 @@
+(test "throw"
+    (throws? (fn [] (throw)))
+
+    (not (throws? (fn [] 1))))

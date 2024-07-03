@@ -1,0 +1,8 @@
+(test "boolean?"
+    (boolean? true)
+    (boolean? false)
+
+    (not (boolean? 1))
+    (not (boolean? "hello"))
+    (not (boolean? (identity "hello")))
+    (not (boolean? (fn [] true))))
