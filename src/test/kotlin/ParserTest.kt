@@ -13,8 +13,8 @@ object ParserTest {
 
     @Test
     fun testParse() {
-        println(parse(tokenize("(+ {2 [3 \"false\"] nil (- 2 2)} 1 2)")))
-        println(parse(tokenize("(defn add [a b] (+ a b))")))
+        parse(tokenize("(+ {2 [3 \"false\"] nil (- 2 2)} 1 2)"))
+        parse(tokenize("(defn add [a b] (+ a b))"))
     }
 
     @Test
