@@ -1,5 +1,7 @@
 package dev.efnilite.rex
 
+import kotlin.reflect.typeOf
+
 /**
  * Represents runtime functions.
  *
@@ -10,14 +12,22 @@ object RT {
 
     // TODO replace with rx impl
     fun test(name: Any?, fns: Any?, scope: Scope = Scope(null)): Any {
-        if (name !is String) error("Invalid name")
-        if (fns !is Arr) error("Invalid fns")
+        if (name !is String) error("name should be a string")
+        if (fns !is Arr) error("fns should be an array")
 
         for (fn in fns) {
-            if (fn !is Fn) error("Invalid fn")
-
-            if (fn.invoke(scope) != true) {
-                throw AssertionError("Test $name failed\n$fn returned false")
+            when (fn) {
+                is Fn -> {
+                    if (fn.invoke(scope) != true) {
+                        throw AssertionError("Test $name failed\n$fn returned false")
+                    }
+                }
+                is Boolean -> {
+                    if (!fn) {
+                        throw AssertionError("Test $name failed\n$fn returned false")
+                    }
+                }
+                else -> error("fn should be a function or a boolean")
             }
         }
 
@@ -25,7 +35,7 @@ object RT {
     }
 
     fun throws(x: Any?, scope: Scope = Scope(null)): Boolean {
-        if (x !is AFn) error("Invalid fn")
+        if (x !is AFn) error("x should be an anonymous function")
 
         try {
             x.invoke(emptyList(), scope)
@@ -37,13 +47,13 @@ object RT {
     }
 
     fun not(x: Any?, scope: Scope = Scope(null)): Boolean {
-        if (x !is Boolean) error("Invalid type")
+        if (x !is Boolean) error("x should be a boolean")
 
         return !x
     }
 
     fun iss(x: Any?, cls: Any?, scope: Scope = Scope(null)): Boolean {
-        if (cls !is String) error("Invalid class type")
+        if (cls !is String) error("cls should be a string")
 
         return Class.forName(cls).isInstance(x)
     }
@@ -57,7 +67,7 @@ object RT {
             is Arr -> coll.size
             is Mp -> coll.size
             is String -> coll.length
-            else -> error("Invalid collection")
+            else -> error("coll should be an array, map or string")
         }
     }
 
@@ -66,7 +76,7 @@ object RT {
             is Arr -> coll[key as Int]
             is Mp -> coll[key]
             is String -> coll[key as Int]
-            else -> error("Invalid collection")
+            else -> error("coll should be an array, map or string")
         }
     }
 
@@ -74,7 +84,7 @@ object RT {
         return when (coll) {
             is Arr -> coll.take(n as Int)
             is String -> coll.take(n as Int)
-            else -> error("Invalid collection")
+            else -> error("coll should be an array or string")
         }
     }
 
@@ -82,12 +92,12 @@ object RT {
         return when (coll) {
             is Arr -> coll.drop(n as Int)
             is String -> coll.drop(n as Int)
-            else -> error("Invalid collection")
+            else -> error("coll should be an array or string")
         }
     }
 
     fun reduce(fn: Any?, initial: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
-        if (coll !is Arr) error("Invalid collection")
+        if (coll !is Arr) error("coll should be an array")
 
         var acc = initial
 

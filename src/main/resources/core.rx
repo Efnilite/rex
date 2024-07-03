@@ -1,8 +1,8 @@
 # For testing
 
 (defn test
-    "Evaluates fns. If any of them are false, fails this test."
-    [name & fns] (dev.efnilite.rex.RT/test name fns))
+    "Evaluates xs. If any element in xs is not true, fails this test."
+    [name & xs] (dev.efnilite.rex.RT/test name xs))
 
 (defn throws?
     "Returns true when evaluation of fn throws an exception. fn should have no args."
