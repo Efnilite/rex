@@ -34,6 +34,11 @@ object RT {
         return true
     }
 
+    fun throww(message: Any?, scope : Scope = Scope(null)): Nothing {
+        if (message == null) throw IllegalStateException()
+        throw IllegalStateException(message.toString())
+    }
+
     fun throws(x: Any?, scope: Scope = Scope(null)): Boolean {
         if (x !is AFn) error("x should be an anonymous function")
 

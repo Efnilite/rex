@@ -4,6 +4,11 @@
     "Evaluates xs. If any element in xs is not true, fails this test."
     [name & xs] (dev.efnilite.rex.RT/test name xs))
 
+(defn throw
+    "Throws an exception."
+    [] (dev.efnilite.rex.RT/throww nil)
+    [message] (dev.efnilite.rex.RT/throww message))
+
 (defn throws?
     "Returns true when evaluation of fn throws an exception. fn should have no args."
     [fn] (dev.efnilite.rex.RT/throws fn))
@@ -20,15 +25,19 @@
 
 (defn num? "Returns true when x is a number." [x] (is? x "java.lang.Number"))
 
-(defn int? "Returns true when x is an integer." [x] (is? x "java.lang.Int"))
+(defn int? "Returns true when x is an integer." [x] (is? x "java.lang.Integer"))
 
 (defn double? "Returns true when x is a double." [x] (is? x "java.lang.Double"))
+
+(defn long? "Returns true when x is a long." [x] (is? x "java.lang.Long"))
 
 (defn boolean? "Returns true when x is a boolean." [x] (is? x "java.lang.Boolean"))
 
 (defn array? "Returns true when x is an array." [x] (is? x "dev.efnilite.rex.Arr"))
 
-(defn map? "Returns true when x is a map." [x] (is? x "dev.efnilite.rex.Map"))
+(defn map? "Returns true when x is a map." [x] (is? x "dev.efnilite.rex.Mp"))
+
+(defn fn? "Returns true when x is an anonymous fn." [x] (is? x "dev.efnilite.rex.AFn"))
 
 # if
 
@@ -94,3 +103,7 @@
     [a] a
     [a b] (dev.efnilite.rex.RT/divide a b)
     [a b & r] (reduce / (/ a b) r))
+
+# Misc
+
+(defn identity "Returns x." [x] x)
