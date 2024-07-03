@@ -1,0 +1,3 @@
+(test "test"
+    (not (throws? (fn [] (test "success" true))))
+    (throws? (fn [] (test "fails" false))))

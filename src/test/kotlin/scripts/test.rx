@@ -1,3 +1,0 @@
-(test "test"
-    (not (throws? (test "success" true)))
-    (throws? (test "fails" false)))
