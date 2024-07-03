@@ -2,6 +2,9 @@ package dev.efnilite.rex
 
 import kotlin.reflect.full.memberFunctions
 
+/**
+ * @author <a href='https://efnilite.dev'>Efnilite</a>
+ */
 object Parser {
 
     /**
@@ -193,7 +196,7 @@ class AFn(
     }
 
     override fun toString(): String {
-        return "AFn(${if (varargs) "varargs " else ""}${params.joinToString(" ")} $body)"
+        return "(fn $params ${if (varargs) "(varargs) " else ""}$body)"
     }
 }
 
@@ -222,7 +225,7 @@ data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : Invocable {
     }
 
     override fun toString(): String {
-        return "DefinedFn($doc $fns)"
+        return "(defn $doc $fns)"
     }
 }
 
@@ -317,7 +320,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     }
 
     override fun toString(): String {
-        return "Fn($identifier ${args.joinToString(" ")})"
+        return "($identifier ${args.joinToString(" ")})"
     }
 }
 

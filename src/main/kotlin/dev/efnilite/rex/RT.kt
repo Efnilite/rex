@@ -1,11 +1,10 @@
 package dev.efnilite.rex
 
-import kotlin.reflect.typeOf
-
 /**
  * Represents runtime functions.
  *
  * TODO: remove sending scope to every fn lol
+ * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
 @Suppress("unused")
 object RT {

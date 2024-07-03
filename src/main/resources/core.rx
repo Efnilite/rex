@@ -1,3 +1,6 @@
+# Core functionality of Rex
+# by Efnilite (https://efnilite.dev)
+
 # For testing
 
 (defn test

@@ -3,6 +3,9 @@ package dev.efnilite.rex
 import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Tokenizer.Companion.tokenize
 
+/**
+ * @author <a href='https://efnilite.dev'>Efnilite</a>
+ */
 object REPL {
 
     @JvmStatic

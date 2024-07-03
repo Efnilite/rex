@@ -5,6 +5,8 @@ import kotlin.math.max
 
 /**
  * Class for tokenizing the provided string.
+ *
+ * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
 class Tokenizer(string: String) {
 
