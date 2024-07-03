@@ -13,7 +13,7 @@ object ParserTest {
 
     @Test
     fun testParse() {
-        println(parse(tokenize("(+ {2 [3 'false'] nil (- 2 2)} 1 2)")))
+        println(parse(tokenize("(+ {2 [3 \"false\"] nil (- 2 2)} 1 2)")))
         println(parse(tokenize("(defn add [a b] (+ a b))")))
     }
 
@@ -112,21 +112,21 @@ object ParserTest {
     fun testMap() {
         assertFails { parse(tokenize("{2 3 4}")) }
 
-        parse(tokenize("{2 3 'balls' (fn [x] x)}")).let {
+        parse(tokenize("{2 3 \"balls\" (fn [x] x)}")).let {
             it as Mp
 
             assertEquals(3, it[2])
             assertIs<AFn>(it["balls"])
         }
 
-        parse(tokenize("(var x 1) {'x' 0 0 x}")).let {
+        parse(tokenize("(var x 1) {\"x\" 0 0 x}")).let {
             it as List<*>
 
             assertEquals(Identifier("x"), it[0])
             assertEquals(Mp("x" to 0, 0 to 1), it[1])
         }
 
-        parse(tokenize("(var x 1) {'x' 0 0 {0 x}}")).let {
+        parse(tokenize("(var x 1) {\"x\" 0 0 {0 x}}")).let {
             it as List<*>
 
             assertEquals(Identifier("x"), it[0])
@@ -166,33 +166,47 @@ object ParserTest {
 
     @Test
     fun testVarargs() {
-        println(parse(tokenize("((fn [x y] [x y]) 1 2)")))
+        assertFails { parse(tokenize("((fn [& more] more))")) }
+
+        parse(tokenize("((fn [& more] more) 1 2 3 4 5)")).let {
+            it as Arr
+
+            assertEquals(Arr(1, 2, 3, 4, 5), it)
+        }
+
+        parse(tokenize("((fn [x y & more] [x y more]) 1 2 3 4 5)")).let {
+            it as Arr
+
+            assertEquals(1, it[0])
+            assertEquals(2, it[1])
+            assertEquals(Arr(3, 4, 5), it[2])
+        }
     }
 
     @Test
     fun testDefn() {
-        parse(tokenize("(defn + 'adds things.' [] 0) (+)")).let {
+        parse(tokenize("(defn + \"adds things.\" [] 0) (+)")).let {
             it as List<*>
 
             assertEquals(Identifier("+"), it[0])
             assertEquals(0, it[1])
         }
 
-        parse(tokenize("(defn + 'adds things.' [x] x) (+ 1)")).let {
+        parse(tokenize("(defn + \"adds things.\" [x] x) (+ 1)")).let {
             it as List<*>
 
             assertEquals(Identifier("+"), it[0])
             assertEquals(1, it[1])
         }
 
-        parse(tokenize("(defn + 'adds things.' [x y] (dev.efnilite.rex.RT/add x y)) (+ 1 2)")).let {
+        parse(tokenize("(defn + \"adds things.\" [x y] (dev.efnilite.rex.RT/add x y)) (+ 1 2)")).let {
             it as List<*>
 
             assertEquals(Identifier("+"), it[0])
             assertEquals(3, it[1])
         }
 
-        parse(tokenize("(defn + 'adds things.' [] 0 [x] x [x y] (dev.efnilite.rex.RT/add x y) " +
+        parse(tokenize("(defn + \"adds things.\" [] 0 [x] x [x y] (dev.efnilite.rex.RT/add x y) " +
                 "[x y & more] (dev.efnilite.rex.RT/reduce + (+ x y) more)) (+) (+ 1) (+ 2 1) (+ 2 1 4) (+ 2 1 4 5 6)")).let {
             it as List<*>
 
