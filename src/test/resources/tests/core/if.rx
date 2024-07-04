@@ -1,5 +1,6 @@
 (test "if"
     (if true true false)
+    (if "hello" false true)
     (if nil false true)
     (throws? (fn [] (if false (throw) false)))
     (throws? (fn [] (if true false (throw)))))
