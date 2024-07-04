@@ -1,0 +1,16 @@
+(test "identity"
+    (= 1 (identity 1))
+    (= "hello" (identity "hello"))
+    (= false (identity false))
+    (= {"a" 2} (identity {"a" 2}))
+    (= [1 [2] {3 4}] (identity [1 [2] {3 4}]))
+    (= (fn [x] x) (identity (fn [x] x)))
+    (= = (identity =))
+
+    (not (= 1 (identity 2)))
+    (not (= "hello" (identity "world")))
+    (not (= false (identity true)))
+    (not (= {"a" 2} (identity {"b" 2})))
+    (not (= [1 [2] {3 4}] (identity [1 [2] {4 3}])))
+    (not (= (fn [x] x) (identity (fn [y] y))))
+    (not (= + (identity =))))

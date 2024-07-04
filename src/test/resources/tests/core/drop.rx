@@ -1,0 +1,8 @@
+(test "drop"
+    (= [3 4] (drop 2 [1 2 3 4]))
+    (= [] (drop 3 [1 2]))
+    (= "lo" (drop 3 "hello"))
+    (= "" (drop 10 "hello"))
+
+    (throws? (fn [] (drop 1 1)))
+    (throws? (fn [] (drop -1 "hello"))))

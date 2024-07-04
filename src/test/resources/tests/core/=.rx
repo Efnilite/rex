@@ -1,0 +1,16 @@
+(test "="
+    (= 1 1)
+    (= "hello" "hello")
+    (= false false)
+    (= {"a" 2} {"a" 2})
+    (= [1 [2] {3 4}] [1 [2] {3 4}])
+    (= (fn [x] x) (fn [x] x))
+    (= = =)
+
+    (not (= 1 2))
+    (not (= "hello" "world"))
+    (not (= false true))
+    (not (= {"a" 2} {"b" 2}))
+    (not (= [1 [2] {3 4}] [1 [2] {4 3}]))
+    (not (= (fn [x] x) (fn [y] y)))
+    (not (= + =)))

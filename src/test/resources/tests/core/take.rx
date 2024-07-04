@@ -1,0 +1,10 @@
+(test "take"
+    (= [1 2] (take 2 [1 2 3 4]))
+    (= [1 2] (take 3 [1 2]))
+    (= [] (take 0 [1 2]))
+    (= "hel" (take 3 "hello"))
+    (= "hello" (take 10 "hello"))
+    (= "" (take 0 "hello"))
+
+    (throws? (fn [] (take 1 1)))
+    (throws? (fn [] (take -1 "hello"))))
