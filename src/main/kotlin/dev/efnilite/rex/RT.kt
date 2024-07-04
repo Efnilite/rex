@@ -50,6 +50,10 @@ object RT {
         return false
     }
 
+    fun eq(a: Any?, b: Any?, scope: Scope = Scope(null)): Boolean {
+        return a == b
+    }
+
     fun not(x: Any?, scope: Scope = Scope(null)): Boolean {
         if (x !is Boolean) error("x should be a boolean")
 
@@ -63,7 +67,7 @@ object RT {
     }
 
     fun iff(cond: Any?, x: Any?, y: Any?, scope: Scope = Scope(null)): Any? {
-        return if (cond != null) x else y
+        return if (cond == true) x else y
     }
 
     fun count(coll: Any?, scope: Scope = Scope(null)): Int {

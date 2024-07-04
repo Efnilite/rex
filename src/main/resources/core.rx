@@ -16,9 +16,47 @@
     "Returns true when evaluation of fn throws an exception. fn should have no args."
     [fn] (dev.efnilite.rex.RT/throws fn))
 
+(defn =
+    "Returns true when a equals b, false if not."
+    [a b] (dev.efnilite.rex.RT/eq a b))
+
+# Collection fns
+
+(defn count
+    "Returns the number of items in a collection."
+    [coll] (dev.efnilite.rex.RT/count coll))
+
+(defn get
+    "Returns the item associated at k in a collection or map."
+    [x k] (dev.efnilite.rex.RT/get x k))
+
+(defn drop
+    "Returns a collection without the first n items."
+    [n coll] (dev.efnilite.rex.RT/drop n coll))
+
+(defn take
+    "Returns the first n items in a collection."
+    [n coll] (dev.efnilite.rex.RT/take n coll))
+
+(defn rest
+    "Returns all but the first item in a collection."
+    [coll] (dev.efnilite.rex.RT/rest coll))
+
+(defn reduce
+    "fn should have 2 arguments. Applies fn to items in coll, keeping results inbetween.
+    If init is not provided, fn is called on the first and second item."
+    [f coll] (dev.efnilite.rex.RT/reduce f (f (first coll) (second coll)) (drop 2 coll))
+    [f init coll] (dev.efnilite.rex.RT/reduce f init coll))
+
 # Basic boolean operators
 
-(defn not [x] (dev.efnilite.rex.RT/not x))
+(defn not "Returns logical negation of a." [a] (dev.efnilite.rex.RT/not a))
+
+(defn and
+    "Returns logical conjunction of xs."
+    [& xs] (reduce
+                (fn [a b] (if (not a) false b))
+                xs))
 
 # is?
 
@@ -45,37 +83,6 @@
 # if
 
 (defn if [cond t f] (dev.efnilite.rex.RT/iff cond t f))
-
-# Collection fns
-
-(defn count
-    "Returns the number of items in a collection."
-    [coll] (dev.efnilite.rex.RT/count coll))
-
-(defn get
-    "Returns the item associated at k in a collection or map."
-    [x k] (dev.efnilite.rex.RT/get x k))
-
-(defn drop
-    "Returns a collection without the first n items."
-    [n coll] (dev.efnilite.rex.RT/drop n coll))
-
-(defn take
-    "Returns the first n items in a collection."
-    [n coll] (dev.efnilite.rex.RT/take n coll))
-
-(defn rest
-    "Returns all but the first item in a collection."
-    [coll] (dev.efnilite.rex.RT/rest coll))
-
-(defn reduce
-    "Reduces a collection using fn. If init is not provided, the first and second item are used."
-    [f coll] (dev.efnilite.rex.RT/reduce f (f (first coll) (second coll)) (rest coll))
-    [f init coll] (dev.efnilite.rex.RT/reduce f init coll))
-
-(defn filter
-    "Filters elements in coll where f returns true. f should have one argument."
-    [f coll] (reduce (fn [r x] (if (f x) (dev.efnilite.rex.RT/add r x) r)) coll))
 
 # Math operators
 
