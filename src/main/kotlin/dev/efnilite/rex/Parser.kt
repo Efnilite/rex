@@ -180,11 +180,14 @@ class AFn(
                 break
             }
 
-            if (params[idx] !is Identifier) {
-                error("Expected an identifier, got ${params[idx]!!::class.simpleName} with value ${params[idx]}")
-            }
+            val result = if (arg is Fn) arg.invoke(scope) else arg
 
-            scope.setReference(params[idx] as Identifier, if (arg is Fn) arg.invoke(scope) else arg)
+            when (params[idx]) {
+                is Identifier -> scope.setReference(params[idx] as Identifier, result)
+                is Arr -> destructArgsRecursively(params[idx] as Arr, result as Arr, scope)
+                else -> error("Expected an identifier, got ${params[idx]!!::class.simpleName} " +
+                        "with value ${params[idx]}")
+            }
         }
 
         var result: Any? = null
@@ -195,8 +198,38 @@ class AFn(
         return result
     }
 
+    private fun destructArgsRecursively(params: Arr, args: Arr, scope: Scope): Scope {
+        for ((idx, param) in params.values.withIndex()) {
+            when (param) {
+                is Identifier -> scope.setReference(param, args[idx])
+                is Arr -> destructArgsRecursively(param, args[idx] as Arr, scope)
+                else -> error("Invalid argument")
+            }
+        }
+
+        return scope
+    }
+
     override fun toString(): String {
         return "(fn $params ${if (varargs) "(varargs) " else ""}$body)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AFn) return false
+
+        if (params != other.params) return false
+        if (body != other.body) return false
+        if (varargs != other.varargs) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = params.hashCode()
+        result = 31 * result + body.hashCode()
+        result = 31 * result + varargs.hashCode()
+        return result
     }
 }
 
@@ -377,6 +410,19 @@ data class Mp(val elements: Map<Any?, Any?>) : Recursable {
 
         return "{$entries}"
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Mp
+
+        return elements == other.elements
+    }
+
+    override fun hashCode(): Int {
+        return elements.hashCode()
+    }
 }
 
 /**
@@ -421,16 +467,25 @@ data class Arr(val values: List<Any?>) : Recursable {
         return values[index]
     }
 
-    fun joinToString(separator: String): String {
-        return values.joinToString(separator)
-    }
-
     operator fun iterator(): Iterator<Any?> {
         return values.iterator()
     }
 
     override fun toString(): String {
         return "[${values.joinToString(" ")}]"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Arr
+
+        return values == other.values
+    }
+
+    override fun hashCode(): Int {
+        return values.hashCode()
     }
 }
 

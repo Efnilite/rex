@@ -136,6 +136,10 @@ object ParserTest {
 
     @Test
     fun testFn() {
+        assertFails { parse(tokenize("((fn [1.0] nil) nil)")) }
+
+        assertEquals(1, parse(tokenize("((fn [[x y] z & more] x) [1 2] 3 4)")))
+
         parse(tokenize("(var x 1) (var y (fn [] x)) (y)")).let {
             it as List<*>
 
