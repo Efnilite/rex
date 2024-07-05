@@ -18,12 +18,12 @@ object RT {
             when (fn) {
                 is Fn -> {
                     if (fn.invoke(scope) != true) {
-                        throw AssertionError("Test $name failed\n$fn returned false")
+                        throw AssertionError("Test $name failed\n$fn returned ${fn.invoke(scope)}")
                     }
                 }
                 is Boolean -> {
                     if (!fn) {
-                        throw AssertionError("Test $name failed\n$fn returned false")
+                        throw AssertionError("Test $name failed\n$fn returned $fn")
                     }
                 }
                 else -> error("fn should be a function or a boolean")
@@ -55,9 +55,7 @@ object RT {
     }
 
     fun not(x: Any?, scope: Scope = Scope(null)): Boolean {
-        if (x !is Boolean) error("x should be a boolean")
-
-        return !x
+        return x == null || x == false
     }
 
     fun iss(x: Any?, cls: Any?, scope: Scope = Scope(null)): Boolean {
@@ -67,7 +65,7 @@ object RT {
     }
 
     fun iff(cond: Any?, x: Any?, y: Any?, scope: Scope = Scope(null)): Any? {
-        return if (cond == true) x else y
+        return if (cond != false && cond != null) x else y
     }
 
     fun count(coll: Any?, scope: Scope = Scope(null)): Int {
@@ -111,6 +109,18 @@ object RT {
 
         for (element in coll) {
             acc = if (fn is Invocable) fn.invoke(listOf(acc, element), scope) else error("Invalid function")
+        }
+
+        return acc
+    }
+
+    fun reduce(fn: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
+        if (coll !is Arr) error("coll should be an array")
+
+        var acc = coll[0]
+
+        for (i in 1 until coll.size) {
+            acc = if (fn is Invocable) fn.invoke(listOf(acc, coll[i]), scope) else error("Invalid function")
         }
 
         return acc
