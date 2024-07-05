@@ -308,11 +308,13 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
 
         val obj = Class.forName(className).kotlin.objectInstance!!
         val functions = obj.javaClass.kotlin.memberFunctions
-        val method = functions.find { it.name == methodName }!!
 
-        val translated = args.map { if (it is Identifier) scope.getReference(it) else it }
+        // ignore `this` instance required for invocation and default scope
+        val method = functions.filter { it.name == methodName && it.parameters.size - 2 == args.size }
 
-        return method.call(RT, *translated.toTypedArray(), scope)
+        val translated = args.map { invokeAny(it, scope) }
+
+        return method.first().call(RT, *translated.toTypedArray(), scope)
     }
 
     private fun invokeVar(scope: Scope): Identifier {
@@ -320,7 +322,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
 
         val ref = args[0] as Identifier
 
-        scope.setReference(ref, args[1])
+        scope.setReference(ref, invokeAny(args[1], scope))
 
         return ref
     }
@@ -345,9 +347,9 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
     }
 
     private fun invokeElse(scope: Scope): Any? {
-        return when (val ref = scope.getReference(identifier as Identifier)) {
-            is Fn -> ref.invoke(Scope(scope))
-            is Invocable -> ref.invoke(args.map { if (it is Identifier) scope.getReference(it) else it }, Scope(scope))
+        return when (val ident = scope.getReference(identifier as Identifier)) {
+            is Fn -> ident.invoke(Scope(scope))
+            is Invocable -> ident.invoke(args.map { if (it is Identifier) scope.getReference(it) else it }, Scope(scope))
             else -> null
         }
     }
@@ -388,17 +390,7 @@ data class Mp(val elements: Map<Any?, Any?>) : Recursable {
     val size get() = elements.size
 
     override fun resolve(scope: Scope): Mp {
-        val resolved = mutableMapOf<Any?, Any?>()
-
-        for ((key, value) in elements) {
-            resolved[key] = when (value) {
-                is Identifier -> scope.getReference(value)
-                is Recursable -> value.resolve(scope)
-                else -> value
-            }
-        }
-
-        return Mp(resolved)
+        return Mp(elements.mapValues { invokeAny(it.value, scope)})
     }
 
     operator fun get(key: Any?): Any? {
@@ -438,13 +430,7 @@ data class Arr(val values: List<Any?>) : Recursable {
     val size get() = values.size
 
     override fun resolve(scope: Scope): Recursable {
-        return Arr(values.map {
-            when (it) {
-                is Identifier -> scope.getReference(it)
-                is Recursable -> it.resolve(scope)
-                else -> it
-            }
-        })
+        return Arr(values.map { invokeAny(it, scope) })
     }
 
     fun drop(n: Int): Arr {
@@ -496,8 +482,8 @@ private fun error(message: String): Nothing {
 private fun invokeAny(any: Any?, scope: Scope): Any? {
     return when (any) {
         is Fn -> any.invoke(scope)
-        is Recursable -> any.resolve(scope)
         is Identifier -> scope.getReference(any)
+        is Recursable -> any.resolve(scope)
         else -> any
     }
 }
