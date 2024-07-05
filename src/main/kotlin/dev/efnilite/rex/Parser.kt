@@ -35,11 +35,14 @@ object Parser {
         val tokens = fn.tokens
         val identifier = tokens[0]
 
-        return if (identifier is IdentifierToken && identifier.value == "fn") {
-            AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
-        } else {
-            Fn(parse(identifier), tokens.drop(1).map { parse(it) })
+        if (identifier is IdentifierToken) {
+            when (identifier.value) {
+                "fn" -> return AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+                "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            }
         }
+
+        return Fn(parse(identifier), tokens.drop(1).map { parse(it) })
     }
 
     private fun parseMap(mp: MapToken): Mp {
@@ -108,11 +111,13 @@ class Scope(private val parent: Scope? = null) {
     override fun toString(): String {
         val entries = refs.entries.joinToString("\n") { "${it.key}: ${it.value}" }
 
-        return "Scope {\n$entries\n}"
+        val parent = parent?.let { "\nParent: $it" } ?: ""
+
+        return "$parent\n\tScope {\t\n$entries\t\n}"
     }
 }
 
-interface Invocable {
+interface DeferredFunction {
 
     /**
      * Replaces the params with the provided arguments in the scope and evaluates the body.
@@ -136,7 +141,7 @@ interface Invocable {
 class AFn(
     private val params: Arr,
     private val body: List<Any?>,
-) : Invocable {
+) : DeferredFunction {
 
     constructor(params: Arr, vararg body: Any?) : this(params, body.toList())
 
@@ -182,11 +187,10 @@ class AFn(
 
             val result = if (arg is Fn) arg.invoke(scope) else arg
 
-            when (params[idx]) {
-                is Identifier -> scope.setReference(params[idx] as Identifier, result)
-                is Arr -> destructArgsRecursively(params[idx] as Arr, result as Arr, scope)
-                else -> error("Expected an identifier, got ${params[idx]!!::class.simpleName} " +
-                        "with value ${params[idx]}")
+            when (val param = params[idx]) {
+                is Identifier -> scope.setReference(param, result)
+                is Arr -> destructArgsRecursively(param, result as Arr, scope)
+                else -> error("Expected an identifier, got ${param?.javaClass?.simpleName} with value $param")
             }
         }
 
@@ -241,7 +245,7 @@ class AFn(
  * The key is the arity of the function.
  * `-arity` should be used for variadic functions.
  */
-data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : Invocable {
+data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : DeferredFunction {
 
     override fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (fns.containsKey(args.size)) {
@@ -263,6 +267,15 @@ data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : Invocable {
 }
 
 /**
+ * Represents a function which is instantly invoked at evaluation time.
+ */
+interface SFunction {
+
+    fun invoke(scope: Scope): Any?
+
+}
+
+/**
  * Represents an S-expression.
  *
  * These have an identifier (the first argument) and a list of remaining arguments.
@@ -271,7 +284,7 @@ data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : Invocable {
  * @param args The arguments to pass to the function.
  * @constructor Creates an S-expression with the provided identifier and arguments.
  */
-data class Fn(val identifier: Any?, val args: List<Any?>) {
+data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
 
     /**
      * Invokes this S-expression with the provided scope.
@@ -286,10 +299,10 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
      * @return The result of the invoked function. May be null.
      * @throws IllegalArgumentException If the provided identifier is not invocable.
      */
-    fun invoke(scope: Scope): Any? {
+    override fun invoke(scope: Scope): Any? {
         return when (identifier) {
-            is Fn -> identifier.invoke(Scope(scope))
-            is AFn -> identifier.invoke(args, Scope(scope))
+            is SFunction -> identifier.invoke(Scope(scope))
+            is DeferredFunction -> identifier.invoke(args, Scope(scope))
             is Identifier -> {
                 return when {
                     identifier.value.contains(".") && identifier.value.contains("/") -> invokeJVMReference(scope)
@@ -348,14 +361,59 @@ data class Fn(val identifier: Any?, val args: List<Any?>) {
 
     private fun invokeElse(scope: Scope): Any? {
         return when (val ident = scope.getReference(identifier as Identifier)) {
-            is Fn -> ident.invoke(Scope(scope))
-            is Invocable -> ident.invoke(args.map { if (it is Identifier) scope.getReference(it) else it }, Scope(scope))
+            is SFunction -> ident.invoke(Scope(scope))
+            is DeferredFunction -> ident.invoke(args.map { if (it is Identifier) scope.getReference(it) else it }, Scope(scope))
             else -> null
         }
     }
 
     override fun toString(): String {
         return "($identifier ${args.joinToString(" ")})"
+    }
+}
+
+class BindingFn(
+    private val vars: Arr,
+    private val body: List<Any?>,
+) : SFunction {
+
+    constructor(vars: Arr, vararg body: Any?) : this(vars, body.toList())
+
+    override fun invoke(scope: Scope): Any? {
+        val lowerScope = Scope(scope)
+
+        for ((key, value) in vars.values.chunked(2)) {
+            val result = if (value is Fn) value.invoke(lowerScope) else value
+
+            when (key) {
+                is Identifier -> lowerScope.setReference(key, result)
+                is Arr -> destructArgsRecursively(key, result as Arr, lowerScope)
+                else -> error("Expected an identifier, got ${key?.javaClass?.simpleName} with value $key")
+            }
+        }
+
+        var result: Any? = null
+        for (any in body) {
+            result = invokeAny(any, lowerScope)
+        }
+
+        return result
+    }
+
+    private fun destructArgsRecursively(params: Arr, args: Arr, scope: Scope): Scope {
+        for ((idx, param) in params.values.withIndex()) {
+            when (param) {
+                is Identifier -> scope.setReference(param, args[idx])
+                is Arr -> destructArgsRecursively(param, args[idx] as Arr, scope)
+                else -> error("Invalid argument")
+            }
+        }
+
+        return scope
+    }
+
+    override fun toString(): String {
+        return "(let $vars ${body.joinToString(" ")})"
     }
 }
 
@@ -481,7 +539,7 @@ private fun error(message: String): Nothing {
 
 private fun invokeAny(any: Any?, scope: Scope): Any? {
     return when (any) {
-        is Fn -> any.invoke(scope)
+        is SFunction -> any.invoke(scope)
         is Identifier -> scope.getReference(any)
         is Recursable -> any.resolve(scope)
         else -> any

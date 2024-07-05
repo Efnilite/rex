@@ -216,6 +216,13 @@ object ParserTest {
 
     @Test
     fun testDefn() {
+        parse(tokenize("((fn [] (defn + \"adds things.\" [] 0))) (+)")).let {
+            it as List<*>
+
+            assertEquals(Identifier("+"), it[0])
+            assertEquals(0, it[1])
+        }
+
         parse(tokenize("(defn + \"adds things.\" [] 0) (+)")).let {
             it as List<*>
 
@@ -258,5 +265,18 @@ object ParserTest {
             assertEquals(1, it[1])
             assertEquals(3, it[2])
         }
+    }
+
+    @Test
+    fun testLet() {
+        parse(tokenize("(let [x 1] x) x")).let {
+            it as List<*>
+
+            assertEquals(1, it[0])
+            assertEquals(null, it[1])
+        }
+
+        assertEquals(1, parse(tokenize("((fn [x] (let [x 1] x)) 2)")))
+        assertEquals(1, parse(tokenize("((fn [] (let [x 1] x)))")))
     }
 }
