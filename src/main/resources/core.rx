@@ -22,6 +22,13 @@
 
 # Collection fns
 
+(defn conj
+    "Returns a new collection with x added to coll."
+    [] []
+    [coll] coll
+    [coll x] (dev.efnilite.rex.RT/conj coll x)
+    [coll x & xs] (reduce conj (conj coll x) xs))
+
 (defn count
     "Returns the number of items in coll."
     [coll] (dev.efnilite.rex.RT/count coll))

@@ -86,6 +86,14 @@ object RT {
         }
     }
 
+    fun conj(coll: Any?, x: Any?, scope: Scope = Scope(null)): Arr {
+        if (coll !is Arr) {
+            error("coll should be an array, map or string")
+        }
+
+        return Arr(coll.values + x)
+    }
+
     fun take(n: Any?, coll: Any?, scope: Scope = Scope(null)): Any {
         return when (coll) {
             is Arr -> coll.take(n as Int)
@@ -108,7 +116,7 @@ object RT {
         var acc = initial
 
         for (element in coll) {
-            acc = if (fn is Invocable) fn.invoke(listOf(acc, element), scope) else error("Invalid function")
+            acc = if (fn is DeferredFunction) fn.invoke(listOf(acc, element), scope) else error("Invalid function")
         }
 
         return acc
@@ -120,7 +128,7 @@ object RT {
         var acc = coll[0]
 
         for (i in 1 until coll.size) {
-            acc = if (fn is Invocable) fn.invoke(listOf(acc, coll[i]), scope) else error("Invalid function")
+            acc = if (fn is DeferredFunction) fn.invoke(listOf(acc, coll[i]), scope) else error("Invalid function")
         }
 
         return acc
@@ -280,5 +288,18 @@ object RT {
                 }
             }
         }
+    }
+
+    fun join(coll: Any?, separator: Any?, scope: Scope = Scope(null)): String {
+        if (coll !is Arr) error("coll should be an array")
+        if (separator !is String) error("separator should be a string")
+
+        return coll.values.joinToString(separator)
+    }
+
+    fun pprintln(x: Any?, scope: Scope = Scope(null)): Unit? {
+        println(x)
+
+        return null
     }
 }
