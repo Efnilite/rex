@@ -1,0 +1,4 @@
+(test "nil?"
+    (nil? nil)
+    (not (nil? false))
+    (not (nil? "true")))

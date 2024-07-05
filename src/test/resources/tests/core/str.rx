@@ -6,3 +6,8 @@
     (not (str? 1))
     (not (str? (identity 1)))
     (not (str? (fn [] "hello"))))
+
+(test "str"
+    (= "a b c" (str "a" "b" "c"))
+    (= "1 true (fn [x] x)" (str 1 true (fn [x] x)))
+    (= "1 true (fn [x] [x true])" (str 1 true (fn [x] [x true]))))

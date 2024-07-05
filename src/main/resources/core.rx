@@ -56,7 +56,7 @@
 
 (defn rest
     "Returns all but the first item in coll."
-    [coll] (dev.efnilite.rex.RT/rest coll))
+    [coll] (drop 1 coll))
 
 (defn reduce
     "fn should have 2 arguments. Applies fn to items in coll, keeping results inbetween.
@@ -68,6 +68,7 @@
 
 (defn not "Returns true if x is false or nil, else false." [x] (dev.efnilite.rex.RT/not x))
 
+# todo optimize by recur and return on first false
 (defn and
     "Returns logical conjunction of xs. (and) returns true. (and x) returns x."
     [] true
@@ -80,7 +81,7 @@
     [x] x
     [& xs] (reduce (fn [a b] (if a true b)) xs))
 
-# is?
+# instances and values
 
 (defn is? [x class] (dev.efnilite.rex.RT/iss x class))
 
@@ -101,6 +102,8 @@
 (defn map? "Returns true when x is a map." [x] (is? x "dev.efnilite.rex.Mp"))
 
 (defn fn? "Returns true when x is an anonymous fn." [x] (is? x "dev.efnilite.rex.AFn"))
+
+(defn nil? "Returns true when x is nil." [x] (= x nil))
 
 # if
 
@@ -139,3 +142,13 @@
 # Misc
 
 (defn identity "Returns x." [x] x)
+
+(defn str
+    "Returns a string representation of xs. (str) returns an empty string."
+    [] ""
+    [& xs] (dev.efnilite.rex.RT/join xs " "))
+
+(defn println
+    "Prints x."
+    [] (dev.efnilite.rex.RT/pprintln "")
+    [& xs] (dev.efnilite.rex.RT/pprintln (str xs)))
