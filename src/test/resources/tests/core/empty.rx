@@ -1,0 +1,8 @@
+(test "empty?"
+    (empty? [])
+    (empty? {})
+    (empty? "")
+
+    (not (empty? [1]))
+    (not (empty? {:a 1}))
+    (not (empty? "a")))

@@ -26,6 +26,10 @@
     "Returns the number of items in coll."
     [coll] (dev.efnilite.rex.RT/count coll))
 
+(defn empty?
+    "Returns true when coll is empty."
+    [coll] (= 0 (count coll)))
+
 (defn get
     "Returns the item associated at k in a collection or map."
     [x k] (dev.efnilite.rex.RT/get x k))
