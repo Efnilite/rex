@@ -211,7 +211,7 @@ class AFn(
     }
 
     override fun toString(): String {
-        return "(fn $params ${if (varargs) "(varargs) " else ""}$body)"
+        return "(fn $params ${if (varargs) "(varargs) " else ""}${body.joinToString(" ")})"
     }
 
     override fun equals(other: Any?): Boolean {
