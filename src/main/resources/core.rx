@@ -23,7 +23,7 @@
 # Collection fns
 
 (defn count
-    "Returns the number of items in a collection."
+    "Returns the number of items in coll."
     [coll] (dev.efnilite.rex.RT/count coll))
 
 (defn get
@@ -31,32 +31,38 @@
     [x k] (dev.efnilite.rex.RT/get x k))
 
 (defn drop
-    "Returns a collection without the first n items."
+    "Returns coll without the first n items."
     [n coll] (dev.efnilite.rex.RT/drop n coll))
 
 (defn take
-    "Returns the first n items in a collection."
+    "Returns the first n items in coll."
     [n coll] (dev.efnilite.rex.RT/take n coll))
 
 (defn rest
-    "Returns all but the first item in a collection."
+    "Returns all but the first item in coll."
     [coll] (dev.efnilite.rex.RT/rest coll))
 
 (defn reduce
     "fn should have 2 arguments. Applies fn to items in coll, keeping results inbetween.
     If init is not provided, fn is called on the first and second item."
-    [f coll] (dev.efnilite.rex.RT/reduce f (f (first coll) (second coll)) (drop 2 coll))
+    [f coll] (dev.efnilite.rex.RT/reduce f coll)
     [f init coll] (dev.efnilite.rex.RT/reduce f init coll))
 
 # Basic boolean operators
 
-(defn not "Returns logical negation of a." [a] (dev.efnilite.rex.RT/not a))
+(defn not "Returns true if x is false or nil, else false." [x] (dev.efnilite.rex.RT/not x))
 
 (defn and
-    "Returns logical conjunction of xs."
-    [& xs] (reduce
-                (fn [a b] (if (not a) false b))
-                xs))
+    "Returns logical conjunction of xs. (and) returns true. (and x) returns x."
+    [] true
+    [x] x
+    [& xs] (reduce (fn [a b] (if (not a) false b)) xs))
+
+(defn or
+    "Returns logical disjunction of xs. (or) returns true. (or x) returns x."
+    [] true
+    [x] x
+    [& xs] (reduce (fn [a b] (if a true b)) xs))
 
 # is?
 

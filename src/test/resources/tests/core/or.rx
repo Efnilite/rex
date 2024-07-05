@@ -1,0 +1,19 @@
+(test "and"
+    (or)
+    (or true)
+    (not (or false))
+    (not (or nil))
+
+    (or true true)
+    (or true false)
+    (or true nil)
+    (or false true)
+    (or nil true)
+
+    (not (and false false))
+    (not (and false nil))
+    (not (and nil false))
+    (not (and nil nil))
+
+    (or 4 nil "hello")
+    (not (or nil false)))
