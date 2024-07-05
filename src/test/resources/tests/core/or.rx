@@ -1,6 +1,8 @@
-(test "and"
+(test "or"
     (or)
     (or true)
+    (= 3 (or 3))
+
     (not (or false))
     (not (or nil))
 
@@ -10,10 +12,10 @@
     (or false true)
     (or nil true)
 
-    (not (and false false))
-    (not (and false nil))
-    (not (and nil false))
-    (not (and nil nil))
+    (not (or false false))
+    (not (or false nil))
+    (not (or nil false))
+    (not (or nil nil))
 
     (or 4 nil "hello")
     (not (or nil false)))

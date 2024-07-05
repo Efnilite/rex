@@ -1,4 +1,6 @@
 (test "test"
     (throws? (fn [] (test "fails" false)))
+    (throws? (fn [] (test "fails" nil)))
+    (throws? (fn [] (test "fails" 23)))
 
     (not (throws? (fn [] (test "success" true)))))

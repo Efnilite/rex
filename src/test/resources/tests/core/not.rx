@@ -1,5 +1,6 @@
 (test "not"
+    (not nil)
     (not false)
-    (not (not true))
 
-    (throws? (fn [] (not "hello"))))
+    (not (not true))
+    (not (not "test")))

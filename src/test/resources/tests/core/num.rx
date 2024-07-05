@@ -3,6 +3,7 @@
     (num? 1)
     (num? 4.235)
 
+    (not (num? nil))
     (not (num? "hello"))
     (not (num? (identity "hello")))
     (not (num? (fn [] 1))))

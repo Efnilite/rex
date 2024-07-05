@@ -2,6 +2,7 @@
     (map? {"a" 1 "b" 2})
     (map? {})
 
+    (not (map? nil))
     (not (map? 1))
     (not (map? "hello"))
     (not (map? (identity "hello")))

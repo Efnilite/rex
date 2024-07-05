@@ -2,6 +2,7 @@
     (boolean? true)
     (boolean? false)
 
+    (not (boolean? nil))
     (not (boolean? 1))
     (not (boolean? "hello"))
     (not (boolean? (identity "hello")))

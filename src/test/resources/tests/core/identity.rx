@@ -1,4 +1,5 @@
 (test "identity"
+    (= nil (identity nil))
     (= 1 (identity 1))
     (= "hello" (identity "hello"))
     (= false (identity false))

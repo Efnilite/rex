@@ -1,6 +1,7 @@
 (test "double?"
     (double? 4.235)
 
+    (not (double? nil))
     (not (double? 1058259824305968260))
     (not (double? 1))
     (not (double? "hello"))

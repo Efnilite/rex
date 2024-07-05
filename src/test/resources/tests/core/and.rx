@@ -1,14 +1,18 @@
 (test "and"
     (and)
     (and true)
+    (= "hello" (and 1 "hello"))
+
+    (and true "3" true)
+    (and 1 true)
+
     (not (and false))
     (not (and nil))
-    (and true true)
     (not (and true false))
+
     (not (and nil nil))
     (not (and nil false))
-
-    (and 1 true)
-    (= "hello" (and 1 "hello"))
+    (not (and false nil))
+    (not (and false false))
 
     (not (and 1 "hello" (fn [x] x) nil)))

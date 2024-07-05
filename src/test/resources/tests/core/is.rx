@@ -2,4 +2,5 @@
     (is? "hello" "java.lang.String")
     (is? 1058259824305968260 "java.lang.Number")
 
+    (not (is? nil "java.lang.String"))
     (not (is? 1 "java.lang.String")))
