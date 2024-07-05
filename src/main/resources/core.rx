@@ -34,6 +34,18 @@
     "Returns the item associated at k in a collection or map."
     [x k] (dev.efnilite.rex.RT/get x k))
 
+(defn first
+    "Returns the first item in coll."
+    [coll] (get coll 0))
+
+(defn second
+    "Returns the second item in coll."
+    [coll] (get coll 1))
+
+(defn last
+    "Returns the last item in coll."
+    [coll] (get coll (- (count coll) 1)))
+
 (defn drop
     "Returns coll without the first n items."
     [n coll] (dev.efnilite.rex.RT/drop n coll))

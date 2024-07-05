@@ -81,7 +81,7 @@ object RT {
         return when (coll) {
             is Arr -> coll[key as Int]
             is Mp -> coll[key]
-            is String -> coll[key as Int]
+            is String -> coll[key as Int].toString()
             else -> error("coll should be an array, map or string")
         }
     }
