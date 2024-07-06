@@ -1,6 +1,7 @@
 package dev.efnilite.rex
 
 import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.full.memberProperties
 
 /**
  * @author <a href='https://efnilite.dev'>Efnilite</a>
@@ -290,6 +291,12 @@ interface SFunction {
 
 }
 
+private var currentEvaluatingScope = Scope(null)
+
+fun getCurrentEvaluatingScope(): Scope {
+    return currentEvaluatingScope
+}
+
 /**
  * Represents an S-expression.
  *
@@ -319,10 +326,12 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
             is SFunction -> identifier.invoke(Scope(scope))
             is DeferredFunction -> identifier.invoke(args, Scope(scope))
             is Identifier -> {
+                val name = identifier.value
                 return when {
-                    identifier.value.contains(".") && identifier.value.contains("/") -> invokeJVMReference(scope)
-                    identifier.value == "var" -> invokeVar(scope)
-                    identifier.value == "defn" -> invokeDefn(scope)
+                    name.contains(".") && name.contains("/") -> invokeJVMStaticReference(scope)
+                    name.contains(".") && !name.contains("/") -> invokeJVMInstanceReference(scope)
+                    name == "var" -> invokeVar(scope)
+                    name == "defn" -> invokeDefn(scope)
                     else -> invokeElse(scope)
                 }
             }
@@ -331,18 +340,52 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
         }
     }
 
-    private fun invokeJVMReference(scope: Scope): Any? {
+    // todo benchmark against using ::class.kotlin
+    private fun invokeJVMInstanceReference(scope: Scope): Any? {
+        val name = (identifier as Identifier).value.replaceFirst(".", "")
+        val instance = args[0]!!
+
+        val translated = args.drop(1).map { invokeAny(it, scope) }
+
+        currentEvaluatingScope = scope
+
+        val fn = instance.javaClass.methods.firstOrNull { it.name == name && it.parameters.size == args.size - 1 }
+
+        return if (fn != null) {
+            fn.invoke(instance, *translated.toTypedArray())
+        } else {
+            val properties = instance.javaClass.fields.firstOrNull { it.name == name }
+
+            if (properties != null) {
+                properties.get(instance)
+            } else {
+                error("No method or property found with name $name")
+            }
+        }
+    }
+
+    private fun invokeJVMStaticReference(scope: Scope): Any? {
         val (className, methodName) = (identifier as Identifier).value.split("/")
-
-        val obj = Class.forName(className).kotlin.objectInstance!!
-        val functions = obj.javaClass.kotlin.memberFunctions
-
-        // ignore `this` instance required for invocation and default scope
-        val method = functions.filter { it.name == methodName && it.parameters.size - 2 == args.size }
 
         val translated = args.map { invokeAny(it, scope) }
 
-        return method.first().call(RT, *translated.toTypedArray(), scope)
+        currentEvaluatingScope = scope
+
+        val obj = Class.forName(className) ?: error("Class $className not found")
+        // ignore `this` instance required for invocation
+        val fn = obj.methods.firstOrNull { it.name == methodName && it.parameters.size == args.size }
+
+        return if (fn != null) {
+            return fn.invoke(RT, *translated.toTypedArray())
+        } else {
+            val properties = obj.fields.firstOrNull { it.name == methodName }
+
+            if (properties != null) {
+                properties.get(obj)
+            } else {
+                error("No method or property found with name $methodName")
+            }
+        }
     }
 
     private fun invokeVar(scope: Scope): Identifier {

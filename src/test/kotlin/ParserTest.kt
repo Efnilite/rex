@@ -18,7 +18,14 @@ object ParserTest {
     }
 
     @Test
-    fun testReferencing() {
+    fun testInstanceReferencing() {
+        assertEquals(false, parse(tokenize("(.isEmpty \"abc\")")))
+        assertEquals(3, parse(tokenize("(.length \"abc\")")))
+    }
+
+    @Test
+    fun testStaticReferencing() {
+        assertEquals(3.141592653589793, parse(tokenize("(java.lang.Math/PI)")))
         assertEquals(3, parse(tokenize("(dev.efnilite.rex.RT/add 1 2)")))
         assertEquals(3, parse(tokenize("(dev.efnilite.rex.RT/add 1 " +
                 "((fn [x y] (dev.efnilite.rex.RT/add x y)) 1 1))")))
