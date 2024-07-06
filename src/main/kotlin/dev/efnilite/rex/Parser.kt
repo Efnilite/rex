@@ -109,11 +109,26 @@ class Scope(private val parent: Scope? = null) {
     }
 
     override fun toString(): String {
-        val entries = refs.entries.joinToString("\n") { "${it.key}: ${it.value}" }
+        var scope = this
+        val scopes = mutableListOf<Scope>()
+        scopes.add(scope)
+        while (scope.parent != null) {
+            scope.parent!!.let {
+                scopes.add(it)
+                scope = it
+            }
+        }
+        scopes.reverse()
 
-        val parent = parent?.let { "\nParent: $it" } ?: ""
+        var str = ""
+        for ((indent, s) in scopes.withIndex()) {
+            str += s.refs.entries.joinToString("\n") {
+                "${"\t".repeat(indent)}${it.key}: ${it.value}"
+            }
+            str += "\n"
+        }
 
-        return "$parent\n\tScope {\t\n$entries\t\n}"
+        return str
     }
 }
 
