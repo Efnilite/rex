@@ -14,19 +14,19 @@ object RT {
         if (name !is String) error("name should be a string")
         if (fns !is Arr) error("fns should be an array")
 
-        for (fn in fns) {
-            when (fn) {
+        for (f in fns) {
+            when (f) {
                 is Fn -> {
-                    if (fn.invoke(scope) != true) {
-                        throw AssertionError("Test $name failed\n$fn returned ${fn.invoke(scope)}")
+                    if (f.invoke(scope) != true) {
+                        throw AssertionError("Test $name failed\n$f returned ${f.invoke(scope)}")
                     }
                 }
                 is Boolean -> {
-                    if (!fn) {
-                        throw AssertionError("Test $name failed\n$fn returned $fn")
+                    if (!f) {
+                        throw AssertionError("Test $name failed\n$f returned $f")
                     }
                 }
-                else -> error("fn should be a function or a boolean")
+                else -> error("f should be a function or a boolean")
             }
         }
 
@@ -110,25 +110,25 @@ object RT {
         }
     }
 
-    fun reduce(fn: Any?, initial: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
+    fun reduce(f: Any?, initial: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
         if (coll !is Arr) error("coll should be an array")
 
         var acc = initial
 
         for (element in coll) {
-            acc = if (fn is DeferredFunction) fn.invoke(listOf(acc, element), scope) else error("Invalid function")
+            acc = if (f is DeferredFunction) f.invoke(listOf(acc, element), scope) else error("Invalid function")
         }
 
         return acc
     }
 
-    fun reduce(fn: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
+    fun reduce(f: Any?, coll: Any?, scope: Scope = Scope(null)): Any? {
         if (coll !is Arr) error("coll should be an array")
 
         var acc = coll[0]
 
         for (i in 1 until coll.size) {
-            acc = if (fn is DeferredFunction) fn.invoke(listOf(acc, coll[i]), scope) else error("Invalid function")
+            acc = if (f is DeferredFunction) f.invoke(listOf(acc, coll[i]), scope) else error("Invalid function")
         }
 
         return acc
