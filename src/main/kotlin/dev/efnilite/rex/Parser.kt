@@ -1,8 +1,5 @@
 package dev.efnilite.rex
 
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.full.memberProperties
-
 /**
  * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
@@ -40,6 +37,7 @@ object Parser {
             when (identifier.value) {
                 "fn" -> return AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
                 "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+                "if" -> return ConditionalFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
             }
         }
 
@@ -282,6 +280,23 @@ data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : DeferredFun
     }
 }
 
+data class ConditionalFn(val condition: Any?, val pass: Any?, val fail: Any?) : SFunction {
+
+    override fun invoke(scope: Scope): Any? {
+        val result = invokeAny(condition, scope)
+
+        return if (result != false && result != null) {
+            invokeAny(pass, scope)
+        } else {
+            invokeAny(fail, scope)
+        }
+    }
+
+    override fun toString(): String {
+        return "(if $condition $pass $fail)"
+    }
+}
+
 /**
  * Represents a function which is instantly invoked at evaluation time.
  */
@@ -431,6 +446,9 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
     }
 }
 
+/**
+ * Represents a function which binds local values (let)
+ */
 class BindingFn(
     private val vars: Arr,
     private val body: List<Any?>,
@@ -548,6 +566,10 @@ data class Arr(val values: List<Any?>) : Recursable {
 
     override fun resolve(scope: Scope): Recursable {
         return Arr(values.map { invokeAny(it, scope) })
+    }
+
+    fun conj(x: Any?): Arr {
+        return Arr(values + x)
     }
 
     fun drop(n: Int): Arr {

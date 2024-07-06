@@ -5,8 +5,10 @@ import dev.efnilite.rex.Mp
 import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Tokenizer.Companion.tokenize
 import org.junit.jupiter.api.Test
+import java.lang.reflect.InvocationTargetException
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 object ParserTest {
@@ -292,5 +294,16 @@ object ParserTest {
 
         assertEquals(1, parse(tokenize("((fn [x] (let [x 1] x)) 2)")))
         assertEquals(1, parse(tokenize("((fn [] (let [x 1] x)))")))
+    }
+
+    @Test
+    fun testIf() {
+        assertEquals(true, parse(tokenize("(if true true false)")))
+        assertEquals(true, parse(tokenize("(if false false true)")))
+        assertEquals(true, parse(tokenize("(if nil false true)")))
+        assertEquals(true, parse(tokenize("(if \"hello\" true false)")))
+
+        assertEquals(true, parse(tokenize("(if true true (dev.efnilite.rex.RT/throww \"\"))")), "lazy evaluation failed")
+        assertFailsWith<InvocationTargetException> { parse(tokenize("(if true (dev.efnilite.rex.RT/throww \"\") (.not_a_method 1))")) }
     }
 }
