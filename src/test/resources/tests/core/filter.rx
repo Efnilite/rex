@@ -1,0 +1,3 @@
+(test "filter"
+    (empty? (filter identity []))
+    (= [2 3] (filter (fn [x] (not= x 1)) [1 2 3])))

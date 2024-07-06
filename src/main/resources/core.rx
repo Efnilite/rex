@@ -20,6 +20,12 @@
     "Returns true when a equals b, false if not."
     [a b] (dev.efnilite.rex.RT/eq a b))
 
+(defn not "Returns true if x is logical false, else false." [x] (dev.efnilite.rex.RT/not x))
+
+(defn not=
+    "Returns true when a does not equal b, false if not."
+    [a b] (not (= a b)))
+
 # Collection fns
 
 (defn conj
@@ -76,9 +82,11 @@
     [f' coll] # todo fix f being overriden in reduce
     (reduce (fn [acc x] (conj acc (f' x))) [] coll))
 
-# Basic boolean operators
+(defn filter
+    "Returns every item in coll where (f x) returns logical true."
+    [f' coll] (reduce (fn [acc x] (if (f' x) (conj acc x) acc)) [] coll))
 
-(defn not "Returns true if x is false or nil, else false." [x] (dev.efnilite.rex.RT/not x))
+# Basic boolean operators
 
 # todo optimize by recur and return on first false
 (defn and
