@@ -14,7 +14,7 @@
 
 (defn throws?
     "Returns true when evaluation of fn throws an exception. fn should have no args."
-    [fn] (dev.efnilite.rex.RT/throws fn))
+    [f] (dev.efnilite.rex.RT/throws f))
 
 (defn =
     "Returns true when a equals b, false if not."
@@ -71,6 +71,11 @@
     [f coll] (dev.efnilite.rex.RT/reduce f coll)
     [f init coll] (dev.efnilite.rex.RT/reduce f init coll))
 
+(defn map
+    "Applies f to every item in coll."
+    [f' coll] # todo fix f being overriden in reduce
+    (reduce (fn [acc x] (conj acc (f' x))) [] coll))
+
 # Basic boolean operators
 
 (defn not "Returns true if x is false or nil, else false." [x] (dev.efnilite.rex.RT/not x))
@@ -117,6 +122,10 @@
 (defn if [cond t f] (dev.efnilite.rex.RT/iff cond t f))
 
 # Math operators
+
+(defn inc "Increments x by 1." [x] (+ x 1))
+
+(defn dec "Decrements x by 1." [x] (- x 1))
 
 (defn +
     "Adds numbers. If no args, returns 0. If one arg, returns arg. If more than one arg, returns the sum of all args."
