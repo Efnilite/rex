@@ -32,12 +32,12 @@
     "Returns a new collection with x added to coll."
     [] []
     [coll] coll
-    [coll x] (dev.efnilite.rex.RT/conj coll x)
+    [coll x] (.conj coll x)
     [coll x & xs] (reduce conj (conj coll x) xs))
 
 (defn count
     "Returns the number of items in coll."
-    [coll] (dev.efnilite.rex.RT/count coll))
+    [coll] (if (str? coll) (.length coll) (.getSize coll)))
 
 (defn empty?
     "Returns true when coll is empty."
@@ -45,7 +45,7 @@
 
 (defn get
     "Returns the item associated at k in a collection or map."
-    [x k] (dev.efnilite.rex.RT/get x k))
+    [x k] (if (str? x) (.charAt x k) (.get x k)))
 
 (defn first
     "Returns the first item in coll."
@@ -124,10 +124,6 @@
 (defn fn? "Returns true when x is an anonymous fn." [x] (is? x "dev.efnilite.rex.AFn"))
 
 (defn nil? "Returns true when x is nil." [x] (= x nil))
-
-# if
-
-(defn if [cond t f] (dev.efnilite.rex.RT/iff cond t f))
 
 # Math operators
 

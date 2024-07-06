@@ -68,30 +68,6 @@ object RT {
         return if (cond != false && cond != null) x else y
     }
 
-    fun count(coll: Any?): Int {
-        return when (coll) {
-            is Arr -> coll.size
-            is Mp -> coll.size
-            is String -> coll.length
-            else -> error("coll should be an array, map or string")
-        }
-    }
-
-    fun get(coll: Any?, key: Any?): Any? {
-        return when (coll) {
-            is Arr -> coll[key as Int]
-            is Mp -> coll[key]
-            is String -> coll[key as Int].toString()
-            else -> error("coll should be an array, map or string")
-        }
-    }
-
-    fun conj(coll: Any?, x: Any?): Arr {
-        if (coll !is Arr) error("coll should be an array, map or string")
-
-        return Arr(coll.values + x)
-    }
-
     fun take(n: Any?, coll: Any?): Any {
         return when (coll) {
             is Arr -> coll.take(n as Int)
