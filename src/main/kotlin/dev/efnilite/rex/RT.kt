@@ -87,9 +87,7 @@ object RT {
     }
 
     fun conj(coll: Any?, x: Any?, scope: Scope = Scope(null)): Arr {
-        if (coll !is Arr) {
-            error("coll should be an array, map or string")
-        }
+        if (coll !is Arr) error("coll should be an array, map or string")
 
         return Arr(coll.values + x)
     }

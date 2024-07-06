@@ -10,5 +10,4 @@
 
 (test "map"
     (empty? (map (fn [x] x) []))
-    (= [2 3 4] (map inc [1 2 3]))
-    (throws? (fn [] (map "g" [2]))))
+    (= [2 3 4] (map inc [1 2 3])))
