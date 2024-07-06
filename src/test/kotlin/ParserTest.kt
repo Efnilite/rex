@@ -21,6 +21,13 @@ object ParserTest {
     fun testInstanceReferencing() {
         assertEquals(false, parse(tokenize("(.isEmpty \"abc\")")))
         assertEquals(3, parse(tokenize("(.length \"abc\")")))
+
+        parse(tokenize("(var x \"abc\") (.charAt x 0)")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals("a", it[1])
+        }
     }
 
     @Test

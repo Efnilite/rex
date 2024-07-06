@@ -327,13 +327,16 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
             is DeferredFunction -> identifier.invoke(args, Scope(scope))
             is Identifier -> {
                 val name = identifier.value
-                return when {
+                val result = when {
                     name.contains(".") && name.contains("/") -> invokeJVMStaticReference(scope)
                     name.contains(".") && !name.contains("/") -> invokeJVMInstanceReference(scope)
                     name == "var" -> invokeVar(scope)
                     name == "defn" -> invokeDefn(scope)
                     else -> invokeElse(scope)
                 }
+
+                // avoid getting chars
+                return if (result is Char) result.toString() else result
             }
 
             else -> error("Invalid function identifier type ${identifier!!::class.simpleName}")
@@ -343,30 +346,28 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
     // todo benchmark against using ::class.kotlin
     private fun invokeJVMInstanceReference(scope: Scope): Any? {
         val name = (identifier as Identifier).value.replaceFirst(".", "")
-        val instance = args[0]!!
-
-        val translated = args.drop(1).map { invokeAny(it, scope) }
+        val translated = args.map { invokeAny(it, scope) }
+        val instance = translated[0]!!
 
         currentEvaluatingScope = scope
 
         val fn = instance.javaClass.methods.firstOrNull { it.name == name && it.parameters.size == args.size - 1 }
 
         return if (fn != null) {
-            fn.invoke(instance, *translated.toTypedArray())
+            fn.invoke(instance, *translated.drop(1).toTypedArray())
         } else {
             val properties = instance.javaClass.fields.firstOrNull { it.name == name }
 
             if (properties != null) {
                 properties.get(instance)
             } else {
-                error("No method or property found with name $name")
+                error("No method or property found with name $name as ${instance.javaClass.simpleName}")
             }
         }
     }
 
     private fun invokeJVMStaticReference(scope: Scope): Any? {
         val (className, methodName) = (identifier as Identifier).value.split("/")
-
         val translated = args.map { invokeAny(it, scope) }
 
         currentEvaluatingScope = scope
@@ -383,7 +384,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
             if (properties != null) {
                 properties.get(obj)
             } else {
-                error("No method or property found with name $methodName")
+                error("No method or property found with name $methodName as ${obj.simpleName}")
             }
         }
     }
