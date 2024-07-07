@@ -1,5 +1,5 @@
-import dev.efnilite.rex.AFn
 import dev.efnilite.rex.Arr
+import dev.efnilite.rex.DeferredFunction
 import dev.efnilite.rex.Identifier
 import dev.efnilite.rex.Mp
 import dev.efnilite.rex.Parser.parse
@@ -150,7 +150,7 @@ object ParserTest {
             it as Mp
 
             assertEquals(3, it[2])
-            assertIs<AFn>(it["balls"])
+            assertIs<DeferredFunction>(it["balls"])
         }
 
         parse(tokenize("(var x 1) {\"x\" 0 0 x}")).let {

@@ -154,7 +154,7 @@ interface DeferredFunction {
  * @param body The expressions in the fn that act as the body.
  * @constructor Creates an anonymous function with the provided parameters and body.
  */
-class AFn(
+private class AFn(
     private val params: Arr,
     private val body: List<Any?>,
 ) : DeferredFunction {
@@ -261,7 +261,7 @@ class AFn(
  * The key is the arity of the function.
  * `-arity` should be used for variadic functions.
  */
-data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : DeferredFunction {
+private data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : DeferredFunction {
 
     override fun invoke(args: List<Any?>, scope: Scope): Any? {
         if (fns.containsKey(args.size)) {
@@ -279,81 +279,6 @@ data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : DeferredFun
 
     override fun toString(): String {
         return "(defn $doc $fns)"
-    }
-}
-
-/**
- * Represents an if function. Does not invoke [pass] or [fail] until it is needed.
- */
-data class IfFn(val condition: Any?, val pass: Any?, val fail: Any?) : SFunction {
-
-    override fun invoke(scope: Scope): Any? {
-        val result = invokeAny(condition, scope)
-
-        return if (result != false && result != null) {
-            invokeAny(pass, scope)
-        } else {
-            invokeAny(fail, scope)
-        }
-    }
-
-    override fun toString(): String {
-        return "(if $condition $pass $fail)"
-    }
-}
-
-/**
- * Represents a cond function.
- */
-data class CondFn(val pairs: List<Pair<Any?, Any?>>) : SFunction {
-
-    override fun invoke(scope: Scope): Any? {
-        for ((condition, pass) in pairs) {
-            val result = invokeAny(condition, scope)
-
-            if (result != false && result != null) {
-                return invokeAny(pass, scope)
-            }
-        }
-
-        return null
-    }
-
-    override fun toString(): String {
-        return "(cond ${pairs.joinToString(" ")})"
-    }
-}
-
-/**
- * Represents a for function.
- */
-data class ForFn(val params: Arr, val body: List<Any?>) : SFunction {
-
-    override fun invoke(scope: Scope): Any {
-        val name = params[0] as Identifier
-        val values = if (params[1] is String) {
-            Arr((params[1] as String).toList().map { it.toString() })
-        } else {
-            invokeAny(params[1], scope) as Arr
-        }
-
-        val results = mutableListOf<Any?>()
-
-        for (value in values) {
-            scope.setReference(name, value)
-
-            var result: Any? = null
-            for (any in body) {
-                result = invokeAny(any, scope)
-            }
-            results += result
-        }
-
-        return Arr(results)
-    }
-
-    override fun toString(): String {
-        return "(for $params ${body.joinToString(" ")}"
     }
 }
 
@@ -381,7 +306,7 @@ fun getCurrentEvaluatingScope(): Scope {
  * @param args The arguments to pass to the function.
  * @constructor Creates an S-expression with the provided identifier and arguments.
  */
-data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
+private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
 
     /**
      * Invokes this S-expression with the provided scope.
@@ -509,7 +434,7 @@ data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
 /**
  * Represents a function which binds local values (let)
  */
-class BindingFn(
+private class BindingFn(
     private val vars: Arr,
     private val body: List<Any?>,
 ) : SFunction {
@@ -551,6 +476,81 @@ class BindingFn(
 
     override fun toString(): String {
         return "(let $vars ${body.joinToString(" ")})"
+    }
+}
+
+/**
+ * Represents an if function. Does not invoke [pass] or [fail] until it is needed.
+ */
+private data class IfFn(val condition: Any?, val pass: Any?, val fail: Any?) : SFunction {
+
+    override fun invoke(scope: Scope): Any? {
+        val result = invokeAny(condition, scope)
+
+        return if (result != false && result != null) {
+            invokeAny(pass, scope)
+        } else {
+            invokeAny(fail, scope)
+        }
+    }
+
+    override fun toString(): String {
+        return "(if $condition $pass $fail)"
+    }
+}
+
+/**
+ * Represents a cond function.
+ */
+private data class CondFn(val pairs: List<Pair<Any?, Any?>>) : SFunction {
+
+    override fun invoke(scope: Scope): Any? {
+        for ((condition, pass) in pairs) {
+            val result = invokeAny(condition, scope)
+
+            if (result != false && result != null) {
+                return invokeAny(pass, scope)
+            }
+        }
+
+        return null
+    }
+
+    override fun toString(): String {
+        return "(cond ${pairs.joinToString(" ")})"
+    }
+}
+
+/**
+ * Represents a for function.
+ */
+private data class ForFn(val params: Arr, val body: List<Any?>) : SFunction {
+
+    override fun invoke(scope: Scope): Any {
+        val name = params[0] as Identifier
+        val values = if (params[1] is String) {
+            Arr((params[1] as String).toList().map { it.toString() })
+        } else {
+            invokeAny(params[1], scope) as Arr
+        }
+
+        val results = mutableListOf<Any?>()
+
+        for (value in values) {
+            scope.setReference(name, value)
+
+            var result: Any? = null
+            for (any in body) {
+                result = invokeAny(any, scope)
+            }
+            results += result
+        }
+
+        return Arr(results)
+    }
+
+    override fun toString(): String {
+        return "(for $params ${body.joinToString(" ")}"
     }
 }
 

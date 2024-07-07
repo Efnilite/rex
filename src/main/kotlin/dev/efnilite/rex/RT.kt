@@ -15,7 +15,7 @@ object RT {
 
         for (f in fns) {
             when (f) {
-                is Fn -> {
+                is SFunction -> {
                     if (f.invoke(getCurrentEvaluatingScope()) != true) {
                         throw AssertionError("Test $name failed\n" +
                                 "$f returned ${f.invoke(getCurrentEvaluatingScope())}")
@@ -39,7 +39,7 @@ object RT {
     }
 
     fun throws(x: Any?): Boolean {
-        if (x !is AFn) error("x should be an anonymous function")
+        if (x !is DeferredFunction) error("x should be an anonymous function")
 
         try {
             x.invoke(emptyList(), getCurrentEvaluatingScope())
