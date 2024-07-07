@@ -201,28 +201,26 @@ class Tokenizer(string: String) {
                     "${" ".repeat(max(0, posInLine - 1))}^ $message"
         )
     }
+}
 
-    companion object {
-        /**
-         * Tokenizes the provided string.
-         * @param string the string to tokenize.
-         * @return a list of tokens.
-         * @throws IllegalArgumentException if the provided string contains syntactic errors.
-         */
-        fun tokenize(string: String): List<Token> {
-            return Tokenizer(string).tokenize().tokens
-        }
+/**
+ * Tokenizes the provided string.
+ * @param string the string to tokenize.
+ * @return a list of tokens.
+ * @throws IllegalArgumentException if the provided string contains syntactic errors.
+ */
+fun tokenize(string: String): List<Token> {
+    return Tokenizer(string).tokenize().tokens
+}
 
-        /**
-         * Tokenizes the provided file.
-         * @param file the file to tokenize.
-         * @return a list of tokens.
-         * @throws IllegalArgumentException if the provided file contains syntactic errors.
-         */
-        fun tokenize(file: File): List<Token> {
-            return Tokenizer(file.readLines().joinToString("\n")).tokenize().tokens
-        }
-    }
+/**
+ * Tokenizes the provided file.
+ * @param file the file to tokenize.
+ * @return a list of tokens.
+ * @throws IllegalArgumentException if the provided file contains syntactic errors.
+ */
+fun tokenize(file: File): List<Token> {
+    return Tokenizer(file.readLines().joinToString("\n")).tokenize().tokens
 }
 
 /**

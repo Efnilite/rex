@@ -168,10 +168,7 @@ interface DeferredFunction {
  * @param body The expressions in the fn that act as the body.
  * @constructor Creates an anonymous function with the provided parameters and body.
  */
-private class AFn(
-    private val params: Arr,
-    private val body: List<Any?>,
-) : DeferredFunction {
+private class AFn(private val params: Arr, private val body: List<Any?>) : DeferredFunction {
 
     constructor(params: Arr, vararg body: Any?) : this(params, body.toList())
 
@@ -179,7 +176,9 @@ private class AFn(
 
     init {
         if (params.contains(Identifier("&"))) {
-            if (params.indexOf(Identifier("&")) + 1 != params.size - 1) error("& must be followed by one other argument")
+            if (params.indexOf(Identifier("&")) + 1 != params.size - 1) {
+                error("& must be followed by one other argument")
+            }
 
             varargs = true
         } else {
@@ -448,10 +447,7 @@ private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
 /**
  * Represents a function which binds local values (let)
  */
-private class BindingFn(
-    private val vars: Arr,
-    private val body: List<Any?>,
-) : SFunction {
+private class BindingFn(private val vars: Arr, private val body: List<Any?>) : SFunction {
 
     constructor(vars: Arr, vararg body: Any?) : this(vars, body.toList())
 
@@ -570,6 +566,7 @@ private data class ForFn(val params: Arr, val body: List<Any?>) : SFunction {
 
 /**
  * Represents an identifier.
+ * Used to differentiate between a string and a function reference.
  *
  * @param value The value of the identifier.
  */

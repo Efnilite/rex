@@ -1,46 +1,39 @@
 package dev.efnilite.rex
 
-import dev.efnilite.rex.Parser.parse
-import dev.efnilite.rex.Tokenizer.Companion.tokenize
-
 /**
  * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
-object REPL {
+fun main() {
+    startRepl()
+}
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        main()
-    }
+private fun startRepl() {
+    val scope = Scope(null)
 
-    private fun main() {
-        val scope = Scope(null)
+    eval(readCore(), scope)
 
-        eval(readCore(), scope)
+    while (true) {
+        print("rex> ")
+        val input = readlnOrNull()?.trim() ?: break
 
-        while (true) {
-            print("rex> ")
-            val input = readlnOrNull()?.trim() ?: break
-
-            if (input.isNotEmpty()) {
-                eval(input, scope)
-            }
+        if (input.isNotEmpty()) {
+            eval(input, scope)
         }
     }
+}
 
-    private fun readCore(): String {
-        return this::class.java.getResourceAsStream("/core.rx")!!.bufferedReader().use { it.readText() }
-    }
+private fun readCore(): String {
+    return object {}.javaClass.classLoader.getResourceAsStream("core.rx")!!.bufferedReader().use { it.readText() }
+}
 
-    private fun eval(input: String, scope: Scope) {
-        try {
-            val tokens = tokenize(input)
-            val result = parse(tokens, scope)
+private fun eval(input: String, scope: Scope) {
+    try {
+        val tokens = tokenize(input)
+        val result = parse(tokens, scope)
 
-            println(result)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            println()
-        }
+        println(result)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        println()
     }
 }

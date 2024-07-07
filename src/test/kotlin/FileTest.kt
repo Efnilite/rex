@@ -1,6 +1,6 @@
-import dev.efnilite.rex.Parser.parse
 import dev.efnilite.rex.Scope
-import dev.efnilite.rex.Tokenizer.Companion.tokenize
+import dev.efnilite.rex.parse
+import dev.efnilite.rex.tokenize
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.net.URI

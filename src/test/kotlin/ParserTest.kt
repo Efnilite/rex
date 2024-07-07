@@ -1,9 +1,4 @@
-import dev.efnilite.rex.Arr
-import dev.efnilite.rex.DeferredFunction
-import dev.efnilite.rex.Identifier
-import dev.efnilite.rex.Mp
-import dev.efnilite.rex.parse
-import dev.efnilite.rex.Tokenizer.Companion.tokenize
+import dev.efnilite.rex.*
 import org.junit.jupiter.api.Test
 import java.lang.reflect.InvocationTargetException
 import kotlin.test.assertEquals

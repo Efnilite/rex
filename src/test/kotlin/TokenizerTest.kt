@@ -1,5 +1,4 @@
 import dev.efnilite.rex.*
-import dev.efnilite.rex.Tokenizer.Companion.tokenize
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import kotlin.reflect.KClass
