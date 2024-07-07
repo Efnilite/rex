@@ -39,6 +39,7 @@ object Parser {
                 "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
                 "if" -> return IfFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
                 "cond" -> return CondFn(tokens.drop(1).chunked(2).map { parse(it[0]) to parse(it[1]) })
+                "for" -> return ForFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
             }
         }
 
@@ -320,6 +321,39 @@ data class CondFn(val pairs: List<Pair<Any?, Any?>>) : SFunction {
 
     override fun toString(): String {
         return "(cond ${pairs.joinToString(" ")})"
+    }
+}
+
+/**
+ * Represents a for function.
+ */
+data class ForFn(val params: Arr, val body: List<Any?>) : SFunction {
+
+    override fun invoke(scope: Scope): Any {
+        val name = params[0] as Identifier
+        val values = if (params[1] is String) {
+            Arr((params[1] as String).toList().map { it.toString() })
+        } else {
+            invokeAny(params[1], scope) as Arr
+        }
+
+        val results = mutableListOf<Any?>()
+
+        for (value in values) {
+            scope.setReference(name, value)
+
+            var result: Any? = null
+            for (any in body) {
+                result = invokeAny(any, scope)
+            }
+            results += result
+        }
+
+        return Arr(results)
+    }
+
+    override fun toString(): String {
+        return "(for $params ${body.joinToString(" ")}"
     }
 }
 

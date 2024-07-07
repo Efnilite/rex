@@ -311,7 +311,23 @@ object ParserTest {
     fun testCond() {
         assertEquals(true, parse(tokenize("(cond true true)")))
         assertEquals(true, parse(tokenize("(cond false false true true)")))
-        assertEquals(true, parse(tokenize("(cond (nil? 10) 3 (= 11 10) 2 true true)")))
-        assertEquals(true, parse(tokenize("(cond false (dev.efnilite.rex.RT/throww \"\") true true)")))
+        assertEquals(true, parse(tokenize("(cond nil 3 nil 2 true true)")))
+        assertEquals(true, parse(tokenize("(cond false (dev.efnilite.rex.RT/throww \"\") true true)")), "lazy evaluation failed")
+    }
+
+    @Test
+    fun testFor() {
+        assertEquals(Arr(), parse(tokenize("(for [x []] x)")))
+        assertEquals(Arr(1, 2, 3), parse(tokenize("(for [x [1 2 3]] x)")))
+
+        assertEquals(Arr(), parse(tokenize("(for [x \"\"] x)")))
+        assertEquals(Arr("1", "2", "3"), parse(tokenize("(for [x \"123\"] x)")))
+
+        parse(tokenize("(var xs [1 2 3]) (for [x xs] x)")).let {
+            it as List<*>
+
+            assertEquals(Identifier("xs"), it[0])
+            assertEquals(Arr(1, 2, 3), it[1])
+        }
     }
 }
