@@ -3,65 +3,76 @@ package dev.efnilite.rex
 /**
  * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
-object Parser {
 
-    /**
-     * Parse the provided tokens into a list of objects.
-     *
-     * @param tokens The tokens to parse.
-     * @return The parsed list of objects.
-     */
-    fun parse(tokens: List<Token>, scope: Scope = Scope(null)): Any? {
-        val parsed = tokens.map { invokeAny(parse(it), scope) }
+/**
+ * Parse the provided tokens into a list of objects.
+ *
+ * @param tokens The tokens to parse.
+ * @return The parsed list of objects.
+ */
+fun parse(tokens: List<Token>, scope: Scope = Scope(null)): Any? {
+    val parsed = tokens.map { invokeAny(parse(it), scope) }
 
-        // avoids returning ["hey"] instead of "hey" when single element is parsed
-        return if (parsed.size == 1) parsed[0] else parsed
+    // avoids returning ["hey"] instead of "hey" when single element is parsed
+    return if (parsed.size == 1) parsed[0] else parsed
+}
+
+private fun parse(token: Token): Any? {
+    return when (token) {
+        is FnToken -> parseFn(token)
+        is MapToken -> parseMap(token)
+        is ArrToken -> parseArr(token)
+        is IdentifierToken -> Identifier(token.value)
+        is Literal<*> -> token.value
+        else -> error("Invalid token")
     }
+}
 
-    private fun parse(token: Token): Any? {
-        return when (token) {
-            is FnToken -> parseFn(token)
-            is MapToken -> parseMap(token)
-            is ArrToken -> parseArr(token)
-            is IdentifierToken -> Identifier(token.value)
-            is Literal<*> -> token.value
-            else -> error("Invalid token")
+private fun parseFn(fn: FnToken): Any {
+    val tokens = fn.tokens
+    val identifier = tokens[0]
+
+    if (identifier is IdentifierToken) {
+        when (identifier.value) {
+            "fn" -> return AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            "if" -> return IfFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
+            "cond" -> return CondFn(tokens.drop(1).chunked(2).map { parse(it[0]) to parse(it[1]) })
+            "for" -> return ForFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
         }
     }
 
-    private fun parseFn(fn: FnToken): Any {
-        val tokens = fn.tokens
-        val identifier = tokens[0]
+    return Fn(parse(identifier), tokens.drop(1).map { parse(it) })
+}
 
-        if (identifier is IdentifierToken) {
-            when (identifier.value) {
-                "fn" -> return AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
-                "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
-                "if" -> return IfFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
-                "cond" -> return CondFn(tokens.drop(1).chunked(2).map { parse(it[0]) to parse(it[1]) })
-                "for" -> return ForFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
-            }
+private fun parseMap(mp: MapToken): Mp {
+    val map = mutableMapOf<Any?, Any?>()
+
+    for (pair in mp.tokens.chunked(2)) {
+        if (pair.size % 2 != 0) {
+            error("Map must have an even number of elements")
         }
 
-        return Fn(parse(identifier), tokens.drop(1).map { parse(it) })
+        map[parse(pair[0])] = parse(pair[1])
     }
 
-    private fun parseMap(mp: MapToken): Mp {
-        val map = mutableMapOf<Any?, Any?>()
+    return Mp(map)
+}
 
-        for (pair in mp.tokens.chunked(2)) {
-            if (pair.size % 2 != 0) {
-                error("Map must have an even number of elements")
-            }
+private fun parseArr(arr: ArrToken): Arr {
+    return Arr(arr.tokens.map { parse(it) })
+}
 
-            map[parse(pair[0])] = parse(pair[1])
-        }
+private fun error(message: String): Nothing {
+    throw IllegalArgumentException(message)
+}
 
-        return Mp(map)
-    }
-
-    private fun parseArr(arr: ArrToken): Arr {
-        return Arr(arr.tokens.map { parse(it) })
+private fun invokeAny(any: Any?, scope: Scope): Any? {
+    return when (any) {
+        is SFunction -> any.invoke(scope)
+        is Identifier -> scope.getReference(any)
+        is Recursable -> any.resolve(scope)
+        else -> any
     }
 }
 
@@ -133,6 +144,9 @@ class Scope(private val parent: Scope? = null) {
     }
 }
 
+/**
+ * Represents a function which can be invoked at a later time.
+ */
 interface DeferredFunction {
 
     /**
@@ -675,18 +689,5 @@ data class Arr(val values: List<Any?>) : Recursable {
 
     override fun hashCode(): Int {
         return values.hashCode()
-    }
-}
-
-private fun error(message: String): Nothing {
-    throw IllegalArgumentException(message)
-}
-
-private fun invokeAny(any: Any?, scope: Scope): Any? {
-    return when (any) {
-        is SFunction -> any.invoke(scope)
-        is Identifier -> scope.getReference(any)
-        is Recursable -> any.resolve(scope)
-        else -> any
     }
 }
