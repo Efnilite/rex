@@ -306,4 +306,12 @@ object ParserTest {
         assertEquals(true, parse(tokenize("(if true true (dev.efnilite.rex.RT/throww \"\"))")), "lazy evaluation failed")
         assertFailsWith<InvocationTargetException> { parse(tokenize("(if true (dev.efnilite.rex.RT/throww \"\") (.not_a_method 1))")) }
     }
+
+    @Test
+    fun testCond() {
+        assertEquals(true, parse(tokenize("(cond true true)")))
+        assertEquals(true, parse(tokenize("(cond false false true true)")))
+        assertEquals(true, parse(tokenize("(cond (nil? 10) 3 (= 11 10) 2 true true)")))
+        assertEquals(true, parse(tokenize("(cond false (dev.efnilite.rex.RT/throww \"\") true true)")))
+    }
 }

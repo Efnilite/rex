@@ -37,7 +37,8 @@ object Parser {
             when (identifier.value) {
                 "fn" -> return AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
                 "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
-                "if" -> return ConditionalFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
+                "if" -> return IfFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
+                "cond" -> return CondFn(tokens.drop(1).chunked(2).map { parse(it[0]) to parse(it[1]) })
             }
         }
 
@@ -280,7 +281,10 @@ data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : DeferredFun
     }
 }
 
-data class ConditionalFn(val condition: Any?, val pass: Any?, val fail: Any?) : SFunction {
+/**
+ * Represents an if function. Does not invoke [pass] or [fail] until it is needed.
+ */
+data class IfFn(val condition: Any?, val pass: Any?, val fail: Any?) : SFunction {
 
     override fun invoke(scope: Scope): Any? {
         val result = invokeAny(condition, scope)
@@ -294,6 +298,28 @@ data class ConditionalFn(val condition: Any?, val pass: Any?, val fail: Any?) : 
 
     override fun toString(): String {
         return "(if $condition $pass $fail)"
+    }
+}
+
+/**
+ * Represents a cond function.
+ */
+data class CondFn(val pairs: List<Pair<Any?, Any?>>) : SFunction {
+
+    override fun invoke(scope: Scope): Any? {
+        for ((condition, pass) in pairs) {
+            val result = invokeAny(condition, scope)
+
+            if (result != false && result != null) {
+                return invokeAny(pass, scope)
+            }
+        }
+
+        return null
+    }
+
+    override fun toString(): String {
+        return "(cond ${pairs.joinToString(" ")})"
     }
 }
 
@@ -570,6 +596,10 @@ data class Arr(val values: List<Any?>) : Recursable {
 
     fun conj(x: Any?): Arr {
         return Arr(values + x)
+    }
+
+    fun joinToString(separator: String): String {
+        return values.joinToString(separator)
     }
 
     fun drop(n: Int): Arr {
