@@ -166,7 +166,7 @@
 (defn str
     "Returns a string representation of xs. (str) returns an empty string."
     [] ""
-    [& xs] (dev.efnilite.rex.RT/join xs " "))
+    [& xs] (.joinToString xs " "))
 
 (defn println
     "Prints x."

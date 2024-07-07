@@ -64,10 +64,6 @@ object RT {
         return Class.forName(cls).isInstance(x)
     }
 
-    fun iff(cond: Any?, x: Any?, y: Any?): Any? {
-        return if (cond != false && cond != null) x else y
-    }
-
     fun take(n: Any?, coll: Any?): Any {
         return when (coll) {
             is Arr -> coll.take(n as Int)
@@ -270,13 +266,6 @@ object RT {
                 }
             }
         }
-    }
-
-    fun join(coll: Any?, separator: Any?): String {
-        if (coll !is Arr) error("coll should be an array")
-        if (separator !is String) error("separator should be a string")
-
-        return coll.values.joinToString(separator)
     }
 
     fun pprintln(x: Any?): Unit? {
