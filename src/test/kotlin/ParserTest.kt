@@ -325,4 +325,31 @@ object ParserTest {
             assertEquals(Arr(1, 2, 3), it[1])
         }
     }
+
+    @Test
+    fun testUse() {
+        parse(tokenize("(var x 1) (use [] x)")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(null, it[1])
+        }
+
+
+        parse(tokenize("(var x 1) (var y 2) (use [x] [x y])")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(Identifier("y"), it[1])
+            assertEquals(Arr(1, null), it[2])
+        }
+
+        parse(tokenize("(var x 1) (var method (fn [x] x)) (use [x] (method x))")).let {
+            it as List<*>
+
+            assertEquals(Identifier("x"), it[0])
+            assertEquals(Identifier("method"), it[1])
+            assertEquals(1, it[2])
+        }
+    }
 }

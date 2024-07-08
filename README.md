@@ -11,9 +11,25 @@ Welcome to the Rex repo.
 
 To use this project, you can use **[Jitpack](https://jitpack.io/#efnilite/rex)** to get the source and include it in your preferred build method.
 
-### Structure
+### Features
 
-Any input first gets sanitized by the Tokenizer, which returns a list of Tokens, which represents the program on the highest level. 
-Some tokens can contain other tokens, thus setting up a nested structure. Other tokens contain literals like ints, doubles and strings.
-Then, the parser takes this input and evaluates the list of Tokens one by one.
-Evaluation means that any Token will be replaced by an instance of the corresponding object, or by a literal.
+Use `var` or `val` to specify (mutable) variables and (immutable) values. 
+Use `set` to change the value of a variable.
+
+```clojure
+(val x nil)
+(var map+ (fn [coll] (map inc coll)))
+
+(if (nil x?)
+    (set map+ (fn [coll] (map dec coll))))
+    
+(map+ [1 2 3])
+```
+
+`use` clears all prior variable or value definitions, except ones you specify.
+
+```clojure
+(val x 1)
+(use [] (+ x 2)) # unknown variable error
+(use [x] (+ x 2)) # returns 3
+```

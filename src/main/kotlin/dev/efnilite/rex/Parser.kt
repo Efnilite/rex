@@ -35,10 +35,11 @@ private fun parseFn(fn: FnToken): Any {
     if (identifier is IdentifierToken) {
         when (identifier.value) {
             "fn" -> return AFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
-            "let" -> return BindingFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            "let" -> return LetFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
             "if" -> return IfFn(parse(tokens[1]), parse(tokens[2]), parse(tokens[3]))
             "cond" -> return CondFn(tokens.drop(1).chunked(2).map { parse(it[0]) to parse(it[1]) })
             "for" -> return ForFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            "use" -> return UseFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
         }
     }
 
@@ -86,8 +87,18 @@ class Scope(private val parent: Scope? = null) {
      * @param ref The reference.
      * @param value The value of the reference.
      */
+    fun setReference(ref: String, value: Any?) {
+        refs[ref] = value
+    }
+
+    /**
+     * Sets a reference in the scope.
+     *
+     * @param ref The reference.
+     * @param value The value of the reference.
+     */
     fun setReference(ref: Identifier, value: Any?) {
-        refs[ref.value] = value
+        refs[ref.name] = value
     }
 
     /**
@@ -98,8 +109,8 @@ class Scope(private val parent: Scope? = null) {
      * @return The value of the reference, or null if not found.
      */
     fun getReference(ref: Identifier): Any? {
-        if (refs.containsKey(ref.value)) {
-            return refs[ref.value]
+        if (refs.containsKey(ref.name)) {
+            return refs[ref.name]
         }
 
         return parent?.getReference(ref)
@@ -118,6 +129,14 @@ class Scope(private val parent: Scope? = null) {
         }
 
         return scope
+    }
+
+    fun getReferences(): Map<String, Any?> {
+        return refs
+    }
+
+    fun removeReference(ref: Identifier) {
+        refs.remove(ref.name)
     }
 
     override fun toString(): String {
@@ -339,7 +358,7 @@ private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
             is SFunction -> identifier.invoke(Scope(scope))
             is DeferredFunction -> identifier.invoke(args, Scope(scope))
             is Identifier -> {
-                val name = identifier.value
+                val name = identifier.name
                 val result = when {
                     name.contains(".") && name.contains("/") -> invokeJVMStaticReference(scope)
                     name.contains(".") && !name.contains("/") -> invokeJVMInstanceReference(scope)
@@ -358,7 +377,7 @@ private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
 
     // todo benchmark against using ::class.kotlin
     private fun invokeJVMInstanceReference(scope: Scope): Any? {
-        val name = (identifier as Identifier).value.replaceFirst(".", "")
+        val name = (identifier as Identifier).name.replaceFirst(".", "")
         val translated = args.map { invokeAny(it, scope) }
         val instance = translated[0]!!
 
@@ -380,7 +399,7 @@ private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
     }
 
     private fun invokeJVMStaticReference(scope: Scope): Any? {
-        val (className, methodName) = (identifier as Identifier).value.split("/")
+        val (className, methodName) = (identifier as Identifier).name.split("/")
         val translated = args.map { invokeAny(it, scope) }
 
         currentEvaluatingScope = scope
@@ -447,9 +466,7 @@ private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
 /**
  * Represents a function which binds local values (let)
  */
-private class BindingFn(private val vars: Arr, private val body: List<Any?>) : SFunction {
-
-    constructor(vars: Arr, vararg body: Any?) : this(vars, body.toList())
+private class LetFn(private val vars: Arr, private val body: List<Any?>) : SFunction {
 
     override fun invoke(scope: Scope): Any? {
         val lowerScope = Scope(scope)
@@ -486,6 +503,38 @@ private class BindingFn(private val vars: Arr, private val body: List<Any?>) : S
 
     override fun toString(): String {
         return "(let $vars ${body.joinToString(" ")})"
+    }
+}
+
+/**
+ * Represents a function which clears the entire global variable scope except for vars provided in [vars].
+ *
+ * @param vars The variables to carry over from the prior scope.
+ */
+private data class UseFn(private val vars: Arr, private val body: List<Any?>) : SFunction {
+
+    override fun invoke(scope: Scope): Any? {
+        val newScope = Scope(null)
+
+        val toAdd = scope.getReferences()
+            .filter { it.value is DeferredFunction || vars.contains(Identifier(it.key)) }
+
+        println(toAdd)
+
+        for ((name, value) in toAdd) {
+            newScope.setReference(name, value)
+        }
+
+        currentEvaluatingScope = newScope
+
+        println(scope)
+        println(newScope)
+
+        var result: Any? = null
+        for (any in body) {
+            result = invokeAny(any, newScope)
+        }
+        return result
     }
 }
 
@@ -568,10 +617,10 @@ private data class ForFn(val params: Arr, val body: List<Any?>) : SFunction {
  * Represents an identifier.
  * Used to differentiate between a string and a function reference.
  *
- * @param value The value of the identifier.
+ * @param name The name of the identifier.
  */
-data class Identifier(val value: String) {
-    override fun toString() = value
+data class Identifier(val name: String) {
+    override fun toString() = name
 }
 
 /**

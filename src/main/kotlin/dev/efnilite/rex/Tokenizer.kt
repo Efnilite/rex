@@ -17,8 +17,8 @@ class Tokenizer(string: String) {
     private var posInLine = 1
     private var lineSoFar = ""
 
-    fun tokenize(): ProgramToken {
-        return tokenizeRecursive(null, "Reached end of file") { ProgramToken(it) } as ProgramToken
+    fun getTokens(): List<Token> {
+        return (tokenizeRecursive(null, "Reached end of file") { ProgramToken(it) } as ProgramToken).tokens
     }
 
     private fun tokenizeFn(): Token {
@@ -139,7 +139,11 @@ class Tokenizer(string: String) {
                 }
 
                 else -> {
-                    checkLegality(char)
+                    when (char) {
+                        '\\', ')', ']', '}' -> {
+                            error("Illegal identifier")
+                        }
+                    }
 
                     token += char
                     next()
@@ -152,14 +156,6 @@ class Tokenizer(string: String) {
         }
 
         return collector(tokens)
-    }
-
-    private fun checkLegality(char: Char) {
-        when (char) {
-            '\\', ')', ']', '}', '#', '\"' -> {
-                error("Illegal identifier")
-            }
-        }
     }
 
     private fun parseToken(token: String): Token {
@@ -203,25 +199,7 @@ class Tokenizer(string: String) {
     }
 }
 
-/**
- * Tokenizes the provided string.
- * @param string the string to tokenize.
- * @return a list of tokens.
- * @throws IllegalArgumentException if the provided string contains syntactic errors.
- */
-fun tokenize(string: String): List<Token> {
-    return Tokenizer(string).tokenize().tokens
-}
-
-/**
- * Tokenizes the provided file.
- * @param file the file to tokenize.
- * @return a list of tokens.
- * @throws IllegalArgumentException if the provided file contains syntactic errors.
- */
-fun tokenize(file: File): List<Token> {
-    return Tokenizer(file.readLines().joinToString("\n")).tokenize().tokens
-}
+private data class ProgramToken(val tokens: List<Token>) : Token
 
 /**
  * Superclass of every valid thing.
@@ -239,11 +217,6 @@ data class MapToken(val tokens: List<Token>) : Token
  * @property value The boolean value.
  */
 data class NilToken(override val value: Nothing? = null) : Token, Literal<Nothing?>
-
-/**
- * Holds all tokens in the program.
- */
-data class ProgramToken(val tokens: List<Token>) : Token
 
 /**
  * An array.
@@ -299,3 +272,23 @@ data class IdentifierToken(override val value: String) : Token, Literal<String>
  * @property value The number value.
  */
 data class IntToken(override val value: Int) : Token, Literal<Number>
+
+/**
+ * Tokenizes the provided string.
+ * @param string the string to tokenize.
+ * @return a list of tokens.
+ * @throws IllegalArgumentException if the provided string contains syntactic errors.
+ */
+fun tokenize(string: String): List<Token> {
+    return Tokenizer(string).getTokens()
+}
+
+/**
+ * Tokenizes the provided file.
+ * @param file the file to tokenize.
+ * @return a list of tokens.
+ * @throws IllegalArgumentException if the provided file contains syntactic errors.
+ */
+fun tokenize(file: File): List<Token> {
+    return Tokenizer(file.readLines().joinToString("\n")).getTokens()
+}
