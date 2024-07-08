@@ -18,13 +18,13 @@
 
 (defn =
     "Returns true when a equals b, false if not."
-    [a b] (dev.efnilite.rex.RT/eq a b))
+    [x y] (dev.efnilite.rex.RT/eq x y))
 
 (defn not "Returns true if x is logical false, else false." [x] (dev.efnilite.rex.RT/not x))
 
 (defn not=
-    "Returns true when a does not equal b, false if not."
-    [a b] (not (= a b)))
+    "Returns true when x does not equal y, false if not."
+    [x y] (not (= x y)))
 
 # Collection fns
 
@@ -127,37 +127,53 @@
 
 # Math operators
 
-(defn inc "Increments x by 1." [x] (+ x 1))
+(defn inc "Increments num by 1." [num] (+ num 1))
 
-(defn dec "Decrements x by 1." [x] (- x 1))
+(defn dec "Decrements num by 1." [num] (- num 1))
 
 (defn +
-    "Adds numbers. If no args, returns 0. If one arg, returns arg. If more than one arg, returns the sum of all args."
+    "Adds numbers. (+) returns 0. (+ x) returns x. If more than one arg, returns x + y + z..."
     [] 0
-    [a] a
-    [a b] (dev.efnilite.rex.RT/add a b)
-    [a b & r] (reduce - (- a b) r))
+    [x] x
+    [x y] (dev.efnilite.rex.RT/add x y)
+    [x y & r] (reduce - (- x y) r))
 
 (defn -
-    "Subtracts numbers. If no args, returns 0. If one arg, returns arg. If more than one arg, returns the subtraction of all args."
+    "Subtracts numbers. (-) returns 0. (- x) returns -x. If more than one arg, returns x - y - z..."
     [] 0
-    [a] a
-    [a b] (dev.efnilite.rex.RT/subtract a b)
-    [a b & r] (reduce - (- a b) r))
+    [x] (- 0 x)
+    [x y] (dev.efnilite.rex.RT/subtract x y)
+    [x y & r] (reduce - (- x y) r))
 
 (defn *
-    "Multiplies numbers. If no args, returns 1. If one arg, returns arg. If more than one arg, returns the product of all args."
+    "Multiplies numbers. (*) returns 1. (* x) returns x. If more than one arg, returns x * y * z..."
     [] 1
-    [a] a
-    [a b] (dev.efnilite.rex.RT/multiply a b)
-    [a b & r] (reduce * (* a b) r))
+    [x] x
+    [x y] (dev.efnilite.rex.RT/multiply x y)
+    [x y & r] (reduce * (* x y) r))
 
 (defn /
-    "Divides numbers. If no args, returns 1. If one arg, returns arg. If more than one arg, returns the division of all args."
+    "Divides numbers. (/) returns 1. (/ x) returns 1/x. If more than one arg, returns x / y / z..."
     [] 1
-    [a] a
-    [a b] (dev.efnilite.rex.RT/divide a b)
-    [a b & r] (reduce / (/ a b) r))
+    [x] (/ 1 x)
+    [x y] (dev.efnilite.rex.RT/divide x y)
+    [x y & r] (reduce / (/ x y) r))
+
+(defn zero? "Returns true when num is zero." [num] (or (= 0.0 num) (= 0 num)))
+
+(defn mod
+    "Returns the modulus of x / y."
+    [x y] (dev.efnilite.rex.RT/mod x y))
+
+(defn even? "Returns true when num is even. Throws if num is not an int."
+    [num] (if (not (int? num))
+              (throw "num should be an int")
+              (= 0 (mod num 2))))
+
+(defn odd? "Returns true when num is odd. Throws if num is not an int."
+    [num] (if (not (int? num))
+              (throw "num should be an int")
+              (not (even? num))))
 
 # Misc
 

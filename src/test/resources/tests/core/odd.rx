@@ -1,0 +1,10 @@
+(test "odd?"
+    (odd? 3)
+    (odd? -3)
+    (odd? 5930953)
+    (not (odd? 0))
+    (not (odd? 2))
+    (not (odd? -2))
+    (not (odd? 5930952))
+
+    (throws? (fn [] (odd? 3.0))))

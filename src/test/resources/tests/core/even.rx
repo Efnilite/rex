@@ -1,0 +1,10 @@
+(test "even?"
+    (even? 0)
+    (even? 2)
+    (even? -2)
+    (even? 5930952)
+    (not (even? 3))
+    (not (even? -3))
+    (not (even? 5930953))
+
+    (throws? (fn [] (even? 4.0))))

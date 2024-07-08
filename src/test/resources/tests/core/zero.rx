@@ -1,0 +1,6 @@
+(test "zero?"
+    (zero? 0)
+    (zero? 0.0)
+    (not (zero? 1))
+    (not (zero? .000000001))
+    (not (zero? "hey")))
