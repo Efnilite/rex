@@ -352,4 +352,23 @@ object ParserTest {
             assertEquals(1, it[2])
         }
     }
+
+    @Test
+    fun testScope() {
+        assertFailsWith<IllegalStateException> { parse(tokenize("x")) }
+    }
+
+    @Test
+    fun testFirstThreading() {
+        assertEquals(Arr(1, 2), parse(tokenize("(-> [1 2])")))
+        assertEquals(Arr(1, 2, 3), parse(tokenize("(-> [1 2] (.conj 3))")))
+        assertEquals(6, parse(tokenize("(-> 1 (dev.efnilite.rex.RT/add 2) (dev.efnilite.rex.RT/add 3))")))
+    }
+
+    @Test
+    fun testLastThreading() {
+        assertEquals(Arr(1, 2), parse(tokenize("(->> [1 2])")))
+        assertEquals(Arr(3, Arr(1, 2)), parse(tokenize("(->> [1 2] (.conj [3]))")))
+        assertEquals(6, parse(tokenize("(->> 1 (dev.efnilite.rex.RT/add 2) (dev.efnilite.rex.RT/add 3))")))
+    }
 }

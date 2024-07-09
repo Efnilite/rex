@@ -40,10 +40,12 @@ private fun parseFn(fn: FnToken): Any {
             "cond" -> return CondFn(tokens.drop(1).chunked(2).map { parse(it[0]) to parse(it[1]) })
             "for" -> return ForFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
             "use" -> return UseFn(parse(tokens[1]) as Arr, tokens.drop(2).map { parse(it) })
+            "->" -> return TreadingFn(TreadingFn.Position.FIRST, tokens.drop(1).map { parse(it) })
+            "->>" -> return TreadingFn(TreadingFn.Position.LAST, tokens.drop(1).map { parse(it) })
         }
     }
 
-    return Fn(parse(identifier), tokens.drop(1).map { parse(it) })
+    return Fn(parse(identifier), tokens.drop(1).map { parse(it) }.toMutableList())
 }
 
 private fun parseMap(mp: MapToken): Mp {
@@ -65,7 +67,7 @@ private fun parseArr(arr: ArrToken): Arr {
 }
 
 private fun error(message: String): Nothing {
-    throw IllegalArgumentException(message)
+    throw IllegalStateException(message)
 }
 
 private fun invokeAny(any: Any?, scope: Scope): Any? {
@@ -111,9 +113,11 @@ class Scope(private val parent: Scope? = null) {
     fun getReference(ref: Identifier): Any? {
         if (refs.containsKey(ref.name)) {
             return refs[ref.name]
+        } else if (parent == null) {
+            error("Unknown identifier ${ref.name}")
         }
 
-        return parent?.getReference(ref)
+        return parent.getReference(ref)
     }
 
     /**
@@ -133,10 +137,6 @@ class Scope(private val parent: Scope? = null) {
 
     fun getReferences(): Map<String, Any?> {
         return refs
-    }
-
-    fun removeReference(ref: Identifier) {
-        refs.remove(ref.name)
     }
 
     override fun toString(): String {
@@ -338,7 +338,7 @@ fun getCurrentEvaluatingScope(): Scope {
  * @param args The arguments to pass to the function.
  * @constructor Creates an S-expression with the provided identifier and arguments.
  */
-private data class Fn(val identifier: Any?, val args: List<Any?>) : SFunction {
+private data class Fn(val identifier: Any?, val args: MutableList<Any?>) : SFunction {
 
     /**
      * Invokes this S-expression with the provided scope.
@@ -611,6 +611,37 @@ private data class ForFn(val params: Arr, val body: List<Any?>) : SFunction {
     override fun toString(): String {
         return "(for $params ${body.joinToString(" ")}"
     }
+}
+
+private data class TreadingFn(val position: Position, val body: List<Any?>) : SFunction {
+
+    enum class Position {
+        FIRST, LAST
+    }
+
+    override fun invoke(scope: Scope): Any? {
+        var lastResult: Any? = invokeAny(body[0], scope)
+
+        for (fn in body.drop(1)) {
+            println(lastResult)
+            println(fn)
+            if (fn !is Fn) {
+                error("Invalid function")
+            }
+
+            when (position) {
+                Position.FIRST -> fn.args.add(0, lastResult)
+                Position.LAST -> fn.args.add(lastResult)
+            }
+
+            lastResult = fn.invoke(scope)
+        }
+
+        println("returns $lastResult")
+
+        return lastResult
+    }
+
 }
 
 /**

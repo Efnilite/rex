@@ -20,7 +20,7 @@ Use `set` to change the value of a variable.
 (val x nil)
 (var map+ (fn [coll] (map inc coll)))
 
-(if (nil x?)
+(if (nil? x)
     (set map+ (fn [coll] (map dec coll))))
     
 (map+ [1 2 3])

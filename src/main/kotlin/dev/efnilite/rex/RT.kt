@@ -269,8 +269,6 @@ object RT {
     }
 
     fun mod(a: Any?, b: Any?): Any {
-        println(a)
-        println(b)
         return when (a) {
             is Int -> {
                 when (b) {
