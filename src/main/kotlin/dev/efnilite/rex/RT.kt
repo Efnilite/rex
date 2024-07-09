@@ -332,11 +332,21 @@ object RT {
         return null
     }
 
-    fun split(s: Any?, regex: Any?, limit: Any?): Any {
+    fun split(s: Any?, regex: Any?, limit: Any?): Arr {
         if (s !is String) error("s should be a string")
         if (regex !is String) error("regex should be a string")
         if (limit !is Int) error("limit should be an int")
 
         return Arr(s.split(Regex(regex), limit))
+    }
+
+    fun time(f: Any?): Double {
+        if (f !is DeferredFunction) error("f should be a function")
+
+        val start = System.nanoTime()
+        f.invoke(emptyList(), getCurrentEvaluatingScope())
+        val end = System.nanoTime()
+
+        return (end - start) / 1E6
     }
 }

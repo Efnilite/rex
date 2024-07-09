@@ -623,8 +623,6 @@ private data class TreadingFn(val position: Position, val body: List<Any?>) : SF
         var lastResult: Any? = invokeAny(body[0], scope)
 
         for (fn in body.drop(1)) {
-            println(lastResult)
-            println(fn)
             if (fn !is Fn) {
                 error("Invalid function")
             }
@@ -636,8 +634,6 @@ private data class TreadingFn(val position: Position, val body: List<Any?>) : SF
 
             lastResult = fn.invoke(scope)
         }
-
-        println("returns $lastResult")
 
         return lastResult
     }
