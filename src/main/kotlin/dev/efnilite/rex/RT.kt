@@ -17,15 +17,19 @@ object RT {
             when (f) {
                 is SFunction -> {
                     if (f.invoke(getCurrentEvaluatingScope()) != true) {
-                        throw AssertionError("Test $name failed\n" +
-                                "$f returned ${f.invoke(getCurrentEvaluatingScope())}")
+                        throw AssertionError(
+                            "Test $name failed\n" +
+                                    "$f returned ${f.invoke(getCurrentEvaluatingScope())}"
+                        )
                     }
                 }
+
                 is Boolean -> {
                     if (!f) {
                         throw AssertionError("Test $name failed\n$f returned $f")
                     }
                 }
+
                 else -> error("f should be a function or a boolean")
             }
         }
@@ -122,6 +126,7 @@ object RT {
                     else -> a + b.toString().toDouble()
                 }
             }
+
             is Double -> {
                 when (b) {
                     is Int -> a + b
@@ -130,6 +135,7 @@ object RT {
                     else -> a + b.toString().toDouble()
                 }
             }
+
             is Long -> {
                 when (b) {
                     is Int -> a + b
@@ -138,6 +144,7 @@ object RT {
                     else -> a + b.toString().toLong()
                 }
             }
+
             else -> {
                 val parsedA = a.toString().toDouble()
 
@@ -161,6 +168,7 @@ object RT {
                     else -> a - b.toString().toDouble()
                 }
             }
+
             is Double -> {
                 when (b) {
                     is Int -> a - b
@@ -169,6 +177,7 @@ object RT {
                     else -> a - b.toString().toDouble()
                 }
             }
+
             is Long -> {
                 when (b) {
                     is Int -> a - b
@@ -177,6 +186,7 @@ object RT {
                     else -> a - b.toString().toLong()
                 }
             }
+
             else -> {
                 val parsedA = a.toString().toDouble()
 
@@ -200,6 +210,7 @@ object RT {
                     else -> a * b.toString().toDouble()
                 }
             }
+
             is Double -> {
                 when (b) {
                     is Int -> a * b
@@ -208,6 +219,7 @@ object RT {
                     else -> a * b.toString().toDouble()
                 }
             }
+
             is Long -> {
                 when (b) {
                     is Int -> a * b
@@ -216,6 +228,7 @@ object RT {
                     else -> a * b.toString().toLong()
                 }
             }
+
             else -> {
                 val parsedA = a.toString().toDouble()
 
@@ -239,6 +252,7 @@ object RT {
                     else -> a / b.toString().toDouble()
                 }
             }
+
             is Double -> {
                 when (b) {
                     is Int -> a / b
@@ -247,6 +261,7 @@ object RT {
                     else -> a / b.toString().toDouble()
                 }
             }
+
             is Long -> {
                 when (b) {
                     is Int -> a / b
@@ -255,6 +270,7 @@ object RT {
                     else -> a / b.toString().toLong()
                 }
             }
+
             else -> {
                 val parsedA = a.toString().toDouble()
 
@@ -278,6 +294,7 @@ object RT {
                     else -> a % b.toString().toDouble()
                 }
             }
+
             is Double -> {
                 when (b) {
                     is Int -> a % b
@@ -286,6 +303,7 @@ object RT {
                     else -> a % b.toString().toDouble()
                 }
             }
+
             is Long -> {
                 when (b) {
                     is Int -> a % b
@@ -294,6 +312,7 @@ object RT {
                     else -> a % b.toString().toLong()
                 }
             }
+
             else -> {
                 val parsedA = a.toString().toDouble()
 
@@ -311,5 +330,13 @@ object RT {
         println(x)
 
         return null
+    }
+
+    fun split(s: Any?, regex: Any?, limit: Any?): Any {
+        if (s !is String) error("s should be a string")
+        if (regex !is String) error("regex should be a string")
+        if (limit !is Int) error("limit should be an int")
+
+        return Arr(s.split(Regex(regex), limit))
     }
 }

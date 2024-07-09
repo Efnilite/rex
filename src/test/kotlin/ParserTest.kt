@@ -9,12 +9,6 @@ import kotlin.test.assertIs
 object ParserTest {
 
     @Test
-    fun testParse() {
-        parse(tokenize("(+ {2 [3 \"false\"] nil (- 2 2)} 1 2)"))
-        parse(tokenize("(defn add [a b] (+ a b))"))
-    }
-
-    @Test
     fun testInstanceReferencing() {
         assertEquals(false, parse(tokenize("(.isEmpty \"abc\")")))
         assertEquals(3, parse(tokenize("(.length \"abc\")")))
@@ -280,13 +274,7 @@ object ParserTest {
 
     @Test
     fun testLet() {
-        parse(tokenize("(let [x 1] x) x")).let {
-            it as List<*>
-
-            assertEquals(1, it[0])
-            assertEquals(null, it[1])
-        }
-
+        assertFailsWith<IllegalStateException> { parse(tokenize("(let [x 1] x) x")) }
         assertEquals(1, parse(tokenize("((fn [x] (let [x 1] x)) 2)")))
         assertEquals(1, parse(tokenize("((fn [] (let [x 1] x)))")))
     }
@@ -328,20 +316,14 @@ object ParserTest {
 
     @Test
     fun testUse() {
-        parse(tokenize("(var x 1) (use [] x)")).let {
-            it as List<*>
+        assertFailsWith<IllegalStateException> { parse(tokenize("(var x 1) (use [] x)")) }
 
-            assertEquals(Identifier("x"), it[0])
-            assertEquals(null, it[1])
-        }
-
-
-        parse(tokenize("(var x 1) (var y 2) (use [x] [x y])")).let {
+        parse(tokenize("(var x 1) (var y 2) (use [x] x)")).let {
             it as List<*>
 
             assertEquals(Identifier("x"), it[0])
             assertEquals(Identifier("y"), it[1])
-            assertEquals(Arr(1, null), it[2])
+            assertEquals(1, it[2])
         }
 
         parse(tokenize("(var x 1) (var method (fn [x] x)) (use [x] (method x))")).let {

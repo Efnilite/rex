@@ -13,6 +13,9 @@ To use this project, you can use **[Jitpack](https://jitpack.io/#efnilite/rex)**
 
 ### Features
 
+Rex contains all the features you love from Clojure. Except for multithreading.
+However, there are some differences.
+
 Use `var` or `val` to specify (mutable) variables and (immutable) values. 
 Use `set` to change the value of a variable.
 

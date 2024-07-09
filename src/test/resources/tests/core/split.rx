@@ -1,0 +1,4 @@
+(test "split"
+    (= ["a" "b" "c"] (split "avbvc" "v"))
+    (= ["a" "b|c"] (split "a|b|c" "\\|" 2))
+    (= ["a" "b" "c"] (split "a\nb\nc" "\n")))
