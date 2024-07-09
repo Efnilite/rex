@@ -160,21 +160,17 @@ class Tokenizer(string: String) {
 
     private fun parseToken(token: String): Token {
         return when {
-            token.matches(Regex("-?\\d*\\.?\\d+")) -> {
-                if (!token.contains(".")) {
-                    try {
-                        IntToken(token.toInt())
-                    } catch (e: NumberFormatException) {
-                        LongToken(token.toLong())
-                    }
-                } else {
-                    DoubleToken(token.toDouble())
+            token.matches(INT_OR_LONG_REGEX) -> {
+                try {
+                    IntToken(token.replace("_", "").toInt())
+                } catch (e: NumberFormatException) {
+                    LongToken(token.replace("_", "").toLong())
                 }
             }
-
-            token.lowercase() == "true" -> BooleanToken(true)
-            token.lowercase() == "false" -> BooleanToken(false)
-            token.lowercase() == "nil" -> NilToken()
+            token.matches(DOUBLE_REGEX) -> DoubleToken(token.replace("_", "").toDouble())
+            token == "true" -> BooleanToken(true)
+            token == "false" -> BooleanToken(false)
+            token == "nil" -> NilToken()
             else -> IdentifierToken(token)
         }
     }
@@ -198,6 +194,9 @@ class Tokenizer(string: String) {
         )
     }
 }
+
+private val DOUBLE_REGEX = Regex("-?\\d*\\.(\\d|_)+")
+private val INT_OR_LONG_REGEX = Regex("-?(\\d|_)+")
 
 private data class ProgramToken(val tokens: List<Token>) : Token
 

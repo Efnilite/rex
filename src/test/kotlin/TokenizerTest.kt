@@ -65,7 +65,7 @@ object TokenizerTest {
     @Test
     @Timeout(1)
     fun testNumber() {
-        val tokens = tokenize("0 0.0 .0 -0.0 -.0 -.2235235 34589345.013593 435807345009 -3495834598345347234")
+        val tokens = tokenize("0 0.0 .0 -0.0 -.0 -.2235_235 34589345.013593 435807345009 -349_5834598345347_234")
 
         assertEquals(9, tokens.size)
         assertLiteral(0, IntToken::class, tokens[0])
