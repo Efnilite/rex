@@ -5,8 +5,6 @@ import kotlin.math.max
 
 /**
  * Class for tokenizing the provided string.
- *
- * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
 class Tokenizer(string: String) {
 
@@ -212,12 +210,6 @@ interface Token
 data class MapToken(val tokens: List<Token>) : Token
 
 /**
- * A boolean literal.
- * @property value The boolean value.
- */
-data class NilToken(override val value: Nothing? = null) : Token, Literal<Nothing?>
-
-/**
  * An array.
  * @property tokens The tokens in the array.
  */
@@ -235,6 +227,12 @@ data class FnToken(val tokens: List<Token>) : Token
 interface Literal<T> {
     val value: T
 }
+
+/**
+ * A nil literal.
+ * @property value Nothing.
+ */
+data class NilToken(override val value: Nothing? = null) : Token, Literal<Nothing?>
 
 /**
  * A string literal.
@@ -261,16 +259,16 @@ data class BooleanToken(override val value: Boolean) : Token, Literal<Boolean>
 data class DoubleToken(override val value: Double) : Token, Literal<Number>
 
 /**
- * An identifier.
- * @property value The identifier value.
- */
-data class IdentifierToken(override val value: String) : Token, Literal<String>
-
-/**
  * An int literal.
  * @property value The number value.
  */
 data class IntToken(override val value: Int) : Token, Literal<Number>
+
+/**
+ * An identifier.
+ * @property value The identifier value.
+ */
+data class IdentifierToken(override val value: String) : Token, Literal<String>
 
 /**
  * Tokenizes the provided string.

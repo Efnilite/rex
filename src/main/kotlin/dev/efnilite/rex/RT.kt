@@ -2,8 +2,6 @@ package dev.efnilite.rex
 
 /**
  * Represents runtime functions.
- *
- * @author <a href='https://efnilite.dev'>Efnilite</a>
  */
 @Suppress("unused")
 object RT {

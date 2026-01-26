@@ -1,2 +1,2 @@
-(test "split"
-    false)
+(test "split-lines"
+    (= ["a" "b" "c"] (split-lines "a\nb\nc" 3)))

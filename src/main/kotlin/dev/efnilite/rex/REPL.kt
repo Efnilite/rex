@@ -1,8 +1,5 @@
 package dev.efnilite.rex
 
-/**
- * @author <a href='https://efnilite.dev'>Efnilite</a>
- */
 fun main() {
     startRepl()
 }

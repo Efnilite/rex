@@ -1,10 +1,6 @@
 package dev.efnilite.rex
 
 /**
- * @author <a href='https://efnilite.dev'>Efnilite</a>
- */
-
-/**
  * Parse the provided tokens into a list of objects.
  *
  * @param tokens The tokens to parse.
@@ -129,7 +125,7 @@ class Scope(private val parent: Scope? = null) {
         var scope = this
 
         while (scope.parent != null) {
-            scope = scope.parent!!
+            scope = scope.parent
         }
 
         return scope
@@ -144,7 +140,7 @@ class Scope(private val parent: Scope? = null) {
         val scopes = mutableListOf<Scope>()
         scopes.add(scope)
         while (scope.parent != null) {
-            scope.parent!!.let {
+            scope.parent.let {
                 scopes.add(it)
                 scope = it
             }
@@ -310,7 +306,7 @@ private data class DefinedFn(val doc: String = "", val fns: Map<Int, AFn>) : Def
     }
 
     override fun toString(): String {
-        return "(defn $doc $fns)"
+        return "(defn \"$doc\" \n\t${fns.values.joinToString("\n\t")})"
     }
 }
 
@@ -368,7 +364,7 @@ private data class Fn(val identifier: Any?, val args: MutableList<Any?>) : SFunc
                 }
 
                 // avoid getting chars
-                return if (result is Char) result.toString() else result
+                if (result is Char) result.toString() else result
             }
 
             else -> error("Invalid function identifier type ${identifier!!::class.simpleName}")
@@ -409,7 +405,7 @@ private data class Fn(val identifier: Any?, val args: MutableList<Any?>) : SFunc
         val fn = obj.methods.firstOrNull { it.name == methodName && it.parameters.size == args.size }
 
         return if (fn != null) {
-            return fn.invoke(RT, *translated.toTypedArray())
+            fn.invoke(RT, *translated.toTypedArray())
         } else {
             val properties = obj.fields.firstOrNull { it.name == methodName }
 
